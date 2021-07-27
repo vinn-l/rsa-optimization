@@ -1,5 +1,5 @@
 TARGET = montgomery prime
-TARGET_ASM = montgomery-asm prime-asm
+TARGET_ASM = montgomery_asm prime_asm
 LIBS = -lm
 CC = gcc
 CFLAGS = -g -Wall -Wextra -O -Wfloat-equal -Wundef
@@ -18,10 +18,10 @@ montgomery: $(SRC_DIR)/montgomery.c
 prime: $(SRC_DIR)/prime.c
 	$(CC) $(CFLAGS) $< -o $@
 
-montgomery-asm: $(SRC_DIR)/montgomery.c
+montgomery_asm: $(SRC_DIR)/montgomery.c
 	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
 
-prime-asm: $(SRC_DIR)/prime.c
+prime_asm: $(SRC_DIR)/prime.c
 	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
 
 clean:
