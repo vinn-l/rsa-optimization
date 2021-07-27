@@ -1,5 +1,5 @@
-TARGET = montgomery prime
-TARGET_ASM = montgomery-asm prime-asm
+TARGET = montgomery montgomery_bitfield prime
+TARGET_ASM = montgomery_asm montgomery_bitfield_asm prime_asm
 LIBS = -lm
 CC = gcc
 CFLAGS = -g -Wall -Wextra -O -Wfloat-equal -Wundef
@@ -15,13 +15,19 @@ all: default asm
 montgomery: $(SRC_DIR)/montgomery.c
 	$(CC) $(CFLAGS) $< -o $@
 
+montgomery_bitfield: $(SRC_DIR)/montgomery_bitfield.c
+	$(CC) $(CFLAGS) $< -o $@
+
 prime: $(SRC_DIR)/prime.c
 	$(CC) $(CFLAGS) $< -o $@
 
-montgomery-asm: $(SRC_DIR)/montgomery.c
+montgomery_bitfield_asm: $(SRC_DIR)/montgomery_bitfield.c
 	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
 
-prime-asm: $(SRC_DIR)/prime.c
+montgomery_asm: $(SRC_DIR)/montgomery.c
+	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
+
+prime_asm: $(SRC_DIR)/prime.c
 	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
 
 clean:
