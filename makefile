@@ -1,5 +1,6 @@
 TARGET = montgomery montgomery_bitfield prime
 TARGET_ASM = montgomery_asm montgomery_bitfield_asm prime_asm
+
 LIBS = -lm
 CC = gcc
 CFLAGS = -g -Wall -Wextra -O -Wfloat-equal -Wundef
