@@ -21,20 +21,62 @@ void print_uint32x3(char*, uint32x3_t);
 uint32x3_t lshift(uint32x3_t, int);
 uint32x3_t rshift(uint32x3_t, int);
 
+// uint32x3_t add_uint32x3(uint32x3_t x, uint32x3_t y)
+// {
+//     uint32x3_t result = {0};
+//     unsigned int carry = 0;
+//     // int i = sizeof(x.value)/sizeof(x.value[0]);
+//     /* Start from LSB */
+//     // while(i--)
+//     for (int i = 2; i != 0; i--)
+//     {
+//         uint64_t tmp = (uint64_t)x.value[i] + y.value[i] + carry;    
+//         result.value[i] = (uint32_t)tmp;
+//         /* Remember the carry */
+//         carry = tmp >> 32;
+//     }
+//     return result;
+// }
+
 uint32x3_t add_uint32x3(uint32x3_t x, uint32x3_t y)
 {
     uint32x3_t result = {0};
     unsigned int carry = 0;
+
     // int i = sizeof(x.value)/sizeof(x.value[0]);
     /* Start from LSB */
     // while(i--)
-    for (int i = 3; i != 0; i++)
+    for (int i = 2; i != 0; i--)
     {
         uint64_t tmp = (uint64_t)x.value[i] + y.value[i] + carry;    
         result.value[i] = (uint32_t)tmp;
         /* Remember the carry */
         carry = tmp >> 32;
     }
+    return result;
+}
+
+// Assume x >= y
+uint32x3_t sub_uint32x3(uint32x3_t x, uint32x3_t y)
+{
+    uint32x3_t result = {0};
+    unsigned int carry = 0;
+
+    result.value[2] = x.value[2] - y.value[2];
+    result.value[1] = x.value[1] - y.value[1];
+    result.value[0] = x.value[0] - y.value[0];
+
+    // check for underflow of lowest 32 bits, subtract carry to mid
+    if (result.value[2] > x.value[2]){
+        printf("sub mid");
+        --result.value[1];
+    }
+
+    if (result.value[1] > x.value[1]){
+        printf("sub high");
+        --result.value[0];
+    }
+
     return result;
 }
 
@@ -169,7 +211,15 @@ int main(int argc, char *argv[])
     print_uint32x3("x", x);
     print_uint32x3("y", y);
     print_uint32x3("result", r);
-    return 0;
+
+    // Test subtraction 32x3
+    uint32x3_t sub_a = {0x4FFFFFFF, 0x4FFFFFFF, 0x5FFFFFFF};
+    uint32x3_t sub_b = {0x0FFFFFFF, 0x9FFFFFFF, 0x6FFFFFFF};
+    uint32x3_t sub_r = sub_uint32x3(sub_a, sub_b);
+    print_uint32x3("sub_a", sub_a);
+    print_uint32x3("sub_b", sub_b);
+    print_uint32x3("sub_r", sub_r);
+
 
     return 0;
 }
