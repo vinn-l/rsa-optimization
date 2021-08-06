@@ -1,6 +1,24 @@
 #include <stdio.h>
 #include <math.h>
 
+// https://en.wikipedia.org/wiki/Modular_exponentiation
+// Modular Exponentiation based on slides and also pseudocode on Wikipedia.
+int modular_exponentiation(int b, int e, int m)
+{
+    int result = 1;
+
+    if (1 & e) // if e is odd
+        result = b;
+    while (e > 0)
+    { // while e > 0
+        e >>= 1;                       // e = e/2
+        b = (b * b) % m;               // b = b^2 % m
+        if (e & 1)                     // if e is odd
+            result = (result * b) % m; // result = result * b % m
+    }
+    return result;
+}
+
 // Code written based of MMM pseudocode from slides
 
 // Observation: RSA does not use negative X, Y and M, thus unsigned
@@ -46,11 +64,20 @@ int modular_multiplication(int X, int Y, int M)
 
 int main(int argc, char *argv[])
 {
-    // Basic test from slides
+    // Basic Modular Multiplication Test from Slides
     int X = 17;
     int Y = 22;
     int M = 23;
 
     int Z = modular_multiplication(X, Y, M);
     printf("%d\n", Z); // Answer should be 16
+
+    // Basic Modular Exponentiation Test from Slides
+    int base = 4;
+    int exp = 13;
+    int mod = 497;
+
+    int modulo = modular_exponentiation(base, exp, mod);
+    printf("%d\n", modulo); // Answer should be 445
+    return 0;
 }
