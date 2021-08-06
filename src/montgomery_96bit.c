@@ -11,7 +11,7 @@ typedef struct uint32x3_t {
 // uint32x3_t operations
 uint32x3_t add_uint32x3(uint32x3_t, uint32x3_t);
 uint32x3_t sub_uint32x3(uint32x3_t, uint32x3_t);
-uint32x3_t compare_uint32x3(uint32x3_t, uint32x3_t);
+uint32_t cmp_uint32x3(uint32x3_t, uint32x3_t);
 void print_uint32x3(char*, uint32x3_t);
 // uint32x3_t mul(uint32x3_t, uint32x3_t);
 // uint32x3_t div(uint32x3_t, uint32x3_t);
@@ -78,6 +78,30 @@ uint32x3_t sub_uint32x3(uint32x3_t x, uint32x3_t y)
     }
 
     return result;
+}
+
+// return 0 if x >= y, 1 if x < y
+uint32_t cmp_uint32x3(uint32x3_t x, uint32x3_t y)
+{
+    // check high
+    if (x.value[0] > y.value[0]){
+        return 0;
+    }
+
+    if (x.value[0] == y.value[0]){
+        // check mid
+        if (x.value[1] > y.value[1]){
+            return 0;
+        }
+
+        if (x.value[1] == y.value[1]){
+            // check low
+            if (x.value[2] >= y.value[2]){
+                return 0;
+            }
+        }
+    }
+    return 1;
 }
 
 void print_uint32x3(char *str, uint32x3_t x)
@@ -220,6 +244,13 @@ int main(int argc, char *argv[])
     print_uint32x3("sub_b", sub_b);
     print_uint32x3("sub_r", sub_r);
 
+    // Test compare 32x3
+    uint32x3_t cmp_a = {0x4FFFFFFF, 0x4FFFFFFF, 0x5FFFFFFF};
+    uint32x3_t cmp_b = {0x0FFFFFFF, 0x9FFFFFFF, 0x6FFFFFFF};
+    uint32_t cmp_r = cmp_uint32x3(cmp_a, cmp_b); // 0
+    uint32_t cmp_rr = cmp_uint32x3(cmp_b, cmp_a); // 1
+    uint32_t cmp_rrr = cmp_uint32x3(cmp_a, cmp_a); // 0
 
+    printf("cmp_r = %" PRIu32 "\ncmp_rr = %" PRIu32 "\ncmp_rrr = %" PRIu32 "\n", cmp_r, cmp_rr, cmp_rrr);
     return 0;
 }
