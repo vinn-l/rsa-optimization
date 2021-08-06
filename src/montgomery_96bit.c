@@ -18,8 +18,8 @@ void print_uint32x3(char*, uint32x3_t);
 // uint32x3_t and(uint32x3_t, uint32x3_t);
 // uint32x3_t or(uint32x3_t, uint32x3_t);
 // uint32x3_t xor(uint32x3_t, uint32x3_t);
-uint32x3_t lshift(uint32x3_t, int);
-uint32x3_t rshift(uint32x3_t, int);
+// uint32x3_t lshift(uint32x3_t, int); // not used
+uint32x3_t rshift_uint32x3(uint32x3_t, int);
 
 // uint32x3_t add_uint32x3(uint32x3_t x, uint32x3_t y)
 // {
@@ -145,6 +145,19 @@ uint32_t cmp_uint32x3(uint32x3_t x, uint32x3_t y)
         }
     }
     return 1;
+}
+
+uint32x3_t rshift_uint32x3(uint32x3_t x, int i)
+{
+    // shift right by 1
+    uint32x3_t result = {0};
+
+    result.value[2] = x.value[2] >> i;
+    result.value[2] += x.value[1] << (32 - i);
+    result.value[1] = x.value[1] >> i;
+    result.value[1] += x.value[0] << (32 - i);
+    result.value[0] = x.value[0] >> i;
+    return result;
 }
 
 void print_uint32x3(char *str, uint32x3_t x)
@@ -293,7 +306,11 @@ int main(int argc, char *argv[])
     uint32_t cmp_r = cmp_uint32x3(cmp_a, cmp_b); // 0
     uint32_t cmp_rr = cmp_uint32x3(cmp_b, cmp_a); // 1
     uint32_t cmp_rrr = cmp_uint32x3(cmp_a, cmp_a); // 0
-
     printf("cmp_r = %" PRIu32 "\ncmp_rr = %" PRIu32 "\ncmp_rrr = %" PRIu32 "\n", cmp_r, cmp_rr, cmp_rrr);
+
+    // Test rshift
+    uint32x3_t rs_a = {0x12345678, 0x01234567, 0x98765432};
+    uint32x3_t rs_r = rshift_uint32x3(rs_a, 2);
+    print_uint32x3("rs_r", rs_r); //91A2B3C0091A2B3CC3B2A19
     return 0;
 }
