@@ -1,16 +1,18 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 // uint32x3_t
 typedef struct uint32x3_t {
-    uint32_t x, y, z;
+    uint32_t value[3];
 } uint32x3_t;
 
 // uint32x3_t operations
-uint32x3_t add(uint32x3_t, uint32x3_t);
-uint32x3_t sub(uint32x3_t, uint32x3_t);
-uint32x3_t compare(uint32x3_t, uint32x3_t);
+uint32x3_t add_uint32x3(uint32x3_t, uint32x3_t);
+uint32x3_t sub_uint32x3(uint32x3_t, uint32x3_t);
+uint32x3_t compare_uint32x3(uint32x3_t, uint32x3_t);
+void print_uint32x3(char*, uint32x3_t);
 // uint32x3_t mul(uint32x3_t, uint32x3_t);
 // uint32x3_t div(uint32x3_t, uint32x3_t);
 // uint32x3_t and(uint32x3_t, uint32x3_t);
@@ -18,6 +20,28 @@ uint32x3_t compare(uint32x3_t, uint32x3_t);
 // uint32x3_t xor(uint32x3_t, uint32x3_t);
 uint32x3_t lshift(uint32x3_t, int);
 uint32x3_t rshift(uint32x3_t, int);
+
+uint32x3_t add_uint32x3(uint32x3_t x, uint32x3_t y)
+{
+    uint32x3_t result = {0};
+    unsigned int carry = 0;
+    // int i = sizeof(x.value)/sizeof(x.value[0]);
+    /* Start from LSB */
+    // while(i--)
+    for (int i = 3; i != 0; i++)
+    {
+        uint64_t tmp = (uint64_t)x.value[i] + y.value[i] + carry;    
+        result.value[i] = (uint32_t)tmp;
+        /* Remember the carry */
+        carry = tmp >> 32;
+    }
+    return result;
+}
+
+void print_uint32x3(char *str, uint32x3_t x)
+{
+    printf("%s = %08x%08x%08x\r\n", str, x.value[0], x.value[1], x.value[2]);
+}
 
 
 // https://en.wikipedia.org/wiki/Modular_exponentiation
@@ -101,7 +125,6 @@ int main(int argc, char *argv[])
 
     int modulo = modular_exponentiation(base, exp, mod);
     printf("%d\n", modulo); // Answer should be 445
-    return 0;
 
     // Simple E
     // P = 221695237201051
@@ -112,17 +135,17 @@ int main(int argc, char *argv[])
     // x = 28
 
     // 95 bit E
-    P = 221695237201051 // 48 bit
-    Q = 162886253482817 // 48 bit
-    N = 36111106602663634391602840667 // P*Q, 48 bit * 48 bit = 95 bit
-    E = 19414542554036919968371256159 // prime, therefore is relatively prime with (P-1)(Q-1)
-    D = 36700924073403172721919985439 // 95 bit
-    x = 19731648216590892426383796091
+    // P = 221695237201051 // 48 bit
+    // Q = 162886253482817 // 48 bit
+    // N = 36111106602663634391602840667 // P*Q, 48 bit * 48 bit = 95 bit
+    // E = 19414542554036919968371256159 // prime, therefore is relatively prime with (P-1)(Q-1)
+    // D = 36700924073403172721919985439 // 95 bit
+    // x = 19731648216590892426383796091
 
     // 95 bit keys
-    const uint32_t N[3] = {0x74AE6843, 0x79222DF5, 0xCAA0445B}
-    const uint32_t E[3] = {0x3EBB554C, 0xBEB56109, 0x2B0B2B5F}
-    const uint32_t D[3] = {0x76964AF8, 0xA1660D33, 0x7A2F071F}
+    const uint32_t N[3] = {0x74AE6843, 0x79222DF5, 0xCAA0445B};
+    const uint32_t E[3] = {0x3EBB554C, 0xBEB56109, 0x2B0B2B5F};
+    const uint32_t D[3] = {0x76964AF8, 0xA1660D33, 0x7A2F071F};
 
     // encrypt plaintext 55
     // cipher text expected result 5740687887086918635830255485
@@ -132,8 +155,21 @@ int main(int argc, char *argv[])
     // cipher text expected result 29193194689960104856100570005
     // decrypt expected result 36111106602663634391602840667
 
-    // Unsure as to how to generate 96 bit keys, therefore just use random 96 bits for now.
-    char N[] = "0x74AE684379222DF5CAA0445B" // 95 bits - 0b11101001010111001101000010000110111100100100010001011011111010111001010101000000100010001011011
-    char E[] = "000000000000000000010001"
-    char D[] = "0x"
+    // uint64_t a = 11446744073709551615ULL;
+    // uint64_t b = 1223472026853735807ULL;
+
+    // uint64_t c = a + b;
+    // printf("uint_64");
+    // printf("%" PRIu64 "\n", c);
+
+    // Test addition 32x3
+    uint32x3_t x = {0x0FFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+    uint32x3_t y = {0x00, 0x00, 0x01};
+    uint32x3_t r = add_uint32x3(x, y);
+    print_uint32x3("x", x);
+    print_uint32x3("y", y);
+    print_uint32x3("result", r);
+    return 0;
+
+    return 0;
 }
