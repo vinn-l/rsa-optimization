@@ -50,7 +50,7 @@ uint32x3_t add_uint32x3(uint32x3_t x, uint32x3_t y)
     return result;
 }
 
-// uint32x3_t add_uint32x3(uint32x3_t x, uint32x3_t y)
+// uint32x3_t add_uint32x3_2(uint32x3_t x, uint32x3_t y)
 // {
 //     uint32x3_t result = {0};
 //     unsigned int carry_low = 0;
@@ -73,8 +73,6 @@ uint32x3_t add_uint32x3(uint32x3_t x, uint32x3_t y)
 //         // printf("add high\n");
 //         ++result.value[0];
 //     }
-
-    
 
 //     return result;
 // }
@@ -155,6 +153,28 @@ uint32x3_t rshift_uint32x3(uint32x3_t x, int i)
     // shift right by 1
     uint32x3_t result = {0};
 
+    //if shift is more than or equal to 64
+    if (i >= 64){
+        result.value[2] = result.value[0];
+        result.value[1] = 0;
+        result.value[0] = 0;
+        i -= 64;
+        result.value[2] >>= i;
+        return result;
+    }
+
+    //if shift is more than or equal to 32
+    if (i >= 32){
+        result.value[2] = x.value[1];
+        result.value[1] = x.value[0];
+        result.value[0] = 0;
+        i -= 32;
+        result.value[2] >>= i;
+        result.value[2] += result.value[1] << (32 - i);
+        result.value[1] >>= i;
+        return result;
+    }
+
     result.value[2] = x.value[2] >> i;
     result.value[2] += x.value[1] << (32 - i);
     result.value[1] = x.value[1] >> i;
@@ -216,15 +236,15 @@ uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, uint32x3_t e, uint32x3
     //     result = b;
 
     // check least first is more efficient
-    while (e.value[2] > 0 || e.value[1] > 0 || e.value[0] > 0)
+    while (e.value[2] || e.value[1] || e.value[0])
     { // while e > 0
         if (e.value[2] & 1){                   // if e is odd
             // result = (result * b) % m; // result = result * b % m
             result = modular_multiplication_32x3(result, p, m, numBits);
         }
-        print_uint32x3("e", e);
+        // print_uint32x3("e", e);
         e = rshift_uint32x3(e, 1);                      // e = e/2
-        print_uint32x3("e", e);
+        // print_uint32x3("e", e);
         // b = (b * b) % m;               // b = b^2 % m
         p = modular_multiplication_32x3(p, p, m, numBits);
     }
@@ -276,29 +296,16 @@ int modular_exponentiation(int b, int e, int m)
 uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M, uint32_t numBits)
 {
     uint32x3_t T = {0};
-    // uint32x3_t ONE = {0,0,1};
     int m = numBits;
     int carry = 0;
 
-    // Observation: Loop unrolling can be performed, especially since
-    // only 2 operations in the loop, and the second operation is dependent
-    // on first.
     for (int i = 0; i < m; i++)
     {
-        // Observation: Repeated calculation of X(i), can store result
-        // in a register.
-
-        // Observation: Multiplication is expensive, but since
-        // multiplication is not going to be with a direct power of 2,
-        // difficult to identify how to optimize with bit operations.
-
-        // Observation: There are operations in T that is not dependent
-        // on n, such as (T + (((x >> i) & 1) * y)), ensure that
-        // compiler allows this to be run concurrently.
         uint32_t n = (T.value[2] & 1) ^ ((rshift_uint32x3(X, i).value[2] & 1) & (Y.value[2] & 1));
         // printf("T(0) = %d\r\n", (T.value[0] & 1));
-        // printf("X = %"PRIu32"\r\n", X.value[0]);
-        // printf("X_shift = %d by %i\r\n", (rshift_uint32x3(X, i), i));
+        // print_uint32x3("X", X);
+        // printf("i: %d", i);
+        // print_uint32x3("x_shift", rshift_uint32x3(X, i));
         // printf("X(i) = %d\r\n", (rshift_uint32x3(X, i).value[0] & 1));
         // printf("Y(0) = %d\r\n", (Y.value[0] & 1));
         // printf("n = %d\r\n", n);
@@ -314,7 +321,7 @@ uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M,
 
             // // T smaller than Y means overflow
             if (cmp_uint32x3(T, Y)){
-                // printf("Overflow\n");
+                printf("Overflow\n");
                 carry += 1;
             }
 
@@ -333,7 +340,7 @@ uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M,
             if (cmp_uint32x3(T, M)){
                 printf("Overflow\n");
                 carry += 1;
-                printf("%d\n", carry);
+                // printf("%d\n", carry);
 
                 if (carry == 2){
                     printf("carry is 2\n");
@@ -352,25 +359,16 @@ uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M,
             print_uint32x3("T_shiftcarry", T);
             carry = 0;
         }
-
-        // Max of T is 2M
-
-        // // keep t under M to prevent overflow
-        // if (!cmp_uint32x3(T, M)){
-        //     // print_uint32x3("T", T);
-        //     // print_uint32x3("M", M);
-            
-        //     T = sub_uint32x3(T, M);
-        //     // print_uint32x3("Result", T);
-        // }
     }
 
-    print_uint32x3("T", T);
-    print_uint32x3("M", M);
+    // print_uint32x3("T", T);
+    // print_uint32x3("M", M);
 
     if (!cmp_uint32x3(T, M)){
+        // print_uint32x3("T", T);
+        // print_uint32x3("M", M);
         T = sub_uint32x3(T, M);
-        print_uint32x3("T_sub", T);
+        // print_uint32x3("T_sub", T);
     }
 
     // print_uint32x3("T", T);
@@ -493,7 +491,7 @@ int modular_multiplication(int X, int Y, int M, int numBits)
 {
     // Observation: Common variables that are frequently used should be
     // stored in registers
-    int T = 0;
+    long int T = 0;
 
     // Find m, number of bits in M
     int m = numBits;
@@ -578,10 +576,12 @@ int main(int argc, char *argv[])
     int E_s = 17;
     int D_s = 2753;
 
-    int cipher_s = modular_exponentiation(P_s, E_s, N_s);
+    // int cipher_s = modular_exponentiation(P_s, E_s, N_s);
+    int cipher_s = modular_exponentiation_mont(P_s, E_s, N_s, 12);
     printf("Expected: 2653\n"); // Answer should be 2653
     printf("cipher_s = %i\n", cipher_s);
-    int plain_s = modular_exponentiation(cipher_s, D_s, N_s);
+    // int plain_s = modular_exponentiation(cipher_s, D_s, N_s);
+    int plain_s = modular_exponentiation_mont(cipher_s, D_s, N_s, 12);
     printf("Expected: 55\n"); // Answer should be 55
     printf("plain_s = %i\n", plain_s);
 
@@ -603,16 +603,16 @@ int main(int argc, char *argv[])
 
     // 95 bit Keys 
     // uint32x3_t plain_t = {0x37E4358A, 0x02B228EF, 0xBFFAC88B};
-    uint32x3_t plain_t = {0, 0x00005000, 0x73000001};
+    uint32x3_t plain_t = {0, 0x00005000, 0x73000001}; // 0000500073000001
     // uint32x3_t plain_t = {0, 0x00000000, 0x0000080501};
     // uint32x3_t N = {0x74AE6843, 0x79222DF5, 0xCAA0445B};
-    uint32x3_t N = {0, 0x0000bc04, 0x6e91ae5f};
+    uint32x3_t N = {0, 0x0000bc04, 0x6e91ae5f}; // 0000bc046e91ae5f
     // uint32x3_t N = {0, 0, 0x00a73911};
     // uint32x3_t E = {0x3EBB554C, 0xBEB56109, 0x2B0B2B5F};
-    uint32x3_t E = {0, 0, 0x00010001};
+    uint32x3_t E = {0, 0, 0x00010001}; // 00010001
     // uint32x3_t D = {0x76964AF8, 0xA1660D33, 0x7A2F071F};
-    uint32x3_t D = {0x76964AF8, 0xA1660D33, 0x004a051d};
-    uint32x3_t r2m_95_2 = {0, 0x0000507f, 0xb204bae6};
+    uint32x3_t D = {0x76964AF8, 0xA1660D33, 0x004a051d}; // 76964AF8A1660D33004a051d
+    uint32x3_t r2m_95_2 = {0, 0x0000507f, 0xb204bae6}; // verified correct for 48 bit
     // uint32x3_t r2m_95_2 = {0x662F7452, 0xF2B207B4, 0xDF150A2D};
     // uint32x3_t P = {0x00000000, 0x00000000, 55};
     // uint32x3_t N = {0x00000000, 0x00000000, 3233};
@@ -623,9 +623,10 @@ int main(int argc, char *argv[])
     // cipher text expected result 5740687887086918635830255485
     // decrypt expected result 55
 
-uint32x3_t cipher_t = modular_exponentiation_mont_32x3(plain_t, E, N, 24, r2m_95_2);
+    uint32x3_t cipher_t = modular_exponentiation_mont_32x3(plain_t, E, N, 48, r2m_95_2);
     // uint32x3_t cipher_t = modular_exponentiation_mont_32x3(plain_t, E, N, 95, r2m_95_2);
-    printf("Expected: 0x5E540B6F3B7B69CC81648395\n"); // Answer should be 29193194689960104856100570005, or 0x5E540B6F3B7B69CC81648395
+    // printf("Expected: 0x5E540B6F3B7B69CC81648395\n"); // Answer should be 29193194689960104856100570005, or 0x5E540B6F3B7B69CC81648395
+    printf("Expected: 0x51d6eef4c6ad\n"); // Answer should be 29193194689960104856100570005, or 0x5E540B6F3B7B69CC81648395
     print_uint32x3("cipher_t", cipher_t);
     uint32x3_t plain_t_res = modular_exponentiation_mont_32x3(cipher_t, D, N, 95, r2m_95_2);
     printf("Expected: 0x37E4358A02B228EFBFFAC88B\n"); // Answer should be 17297563458314651238923946123, or 0x37E4358A02B228EFBFFAC88B
@@ -651,12 +652,14 @@ uint32x3_t cipher_t = modular_exponentiation_mont_32x3(plain_t, E, N, 24, r2m_95
 
     // T = a967651f93186f4006a0bcd3
     // M = 3adac9fab325ff4838b1e2df
-    uint32x3_t x_2 = {0xa967651f, 0x93186f40, 0x06a0bcd3};
-    uint32x3_t y_2 = {0x3adac9fa, 0xb325ff48, 0x38b1e2df};
-    x_2 = add_uint32x3(x_2, y_2);
+    uint32x3_t x_2 = {0xa967651f, 0xffffffff, 0xf6a0bcd3};
+    uint32x3_t y_2 = {0x3adac9fa, 0xffffffff, 0x38b1e2df};
+    uint32x3_t x_2_1 = add_uint32x3(x_2, y_2);
+    // uint32x3_t x_2_2 = add_uint32x3_2(x_2, y_2);
     print_uint32x3("x_2", x_2);
     print_uint32x3("y_2", y_2);
-    print_uint32x3("result", x_2);
+    print_uint32x3("result", x_2_1);
+    // print_uint32x3("result_2", x_2_2);
 
     // Test subtraction 32x3
     uint32x3_t sub_a = {0x4FFFFFFF, 0x9FFFFFFF, 0x5FFFFFFF};
