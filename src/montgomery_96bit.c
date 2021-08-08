@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <time.h>
 
 // uint32x3_t consists of array of 3 uint32_t
 typedef struct uint32x3_t {
@@ -197,7 +198,8 @@ int main()
 {
     // 48 bit Keys
     // n='a362fc7f41e5' e='000000010001' d='1db8365798ed'
-
+    clock_t t;
+    double time_taken;
     uint32x3_t plain_t = {0, 0x00005000, 0x73000001}; // 0000500073000001
     uint32x3_t N = {0, 0x0000a362, 0xfc7f41e5}; // 0000bc046e91ae5f
     uint32x3_t E = {0, 0, 0x00010001};
@@ -206,16 +208,24 @@ int main()
 
     printf("Perfoming Test 1 - 48 bit keys\n");
     printf("----------------------\n");
-    printf("Encrypting 48 bit...\n");
     print_uint32x3("Plain Text", plain_t);
     print_uint32x3("PQ", N);
     print_uint32x3("E", E);
     print_uint32x3("D", D);
+    printf("Encrypting 48 bit...\n");
+    t = clock();
     uint32x3_t cipher_t = encrypt(plain_t, E, N, 48, r2m_95_2);
+    t = clock() - t;
+    time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+    printf("Time taken = %f, Clock Cycles = %ld\n", time_taken, t);
     print_uint32x3("Encrypted Cipher Text", cipher_t);
     
     printf("Decrypting 48 bit...\n");
+    t = clock();
     uint32x3_t plain_t_res = decrypt(cipher_t, D, N, 48, r2m_95_2);
+    t = clock() - t;
+    time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+    printf("Time taken = %f, Clock Cycles = %ld\n", time_taken, t);
     print_uint32x3("Decrypted Plain Text", plain_t_res);
     printf("\n");
 
@@ -229,17 +239,26 @@ int main()
 
     printf("Perfoming Test 2 - 95 bit keys\n");
     printf("----------------------\n");
-    printf("Encrypting 95 bit...\n");
     print_uint32x3("Plain Text", plain_t_95);
     print_uint32x3("PQ", N_95);
     print_uint32x3("E", E_95);
     print_uint32x3("D", D_95);
+    printf("Encrypting 95 bit...\n");
     // printf("Expected Cipher Text = 0x5E540B6F3B7B69CC81648395\n");
+    
+    t = clock();
     uint32x3_t cipher_t_95 = encrypt(plain_t_95, E_95, N_95, 95, r2m_95_2_95);
+    t = clock() - t;
+    time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
     print_uint32x3("Encrypted Cipher Text", cipher_t_95);
+    printf("Time taken = %f, Clock Cycles = %ld\n", time_taken, t);
 
     printf("Decrypting 95 bit...\n");
+    t = clock();
     uint32x3_t plain_t_res_95 = decrypt(cipher_t_95, D_95, N_95, 95, r2m_95_2_95);
+    t = clock() - t;
+    time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+    printf("Time taken = %f, Clock Cycles = %ld\n", time_taken, t);
     print_uint32x3("Decrypted Plain Text", plain_t_res_95);
     printf("\n");
 
@@ -253,16 +272,24 @@ int main()
 
     printf("Perfoming Test 3 - 96 bit keys\n");
     printf("----------------------\n");
-    printf("Encrypting 96 bit...\n");
     print_uint32x3("Plain Text", plain_t_95_2);
     print_uint32x3("PQ", N_95_2);
     print_uint32x3("E", E_95_2);
     print_uint32x3("D", D_95_2);
+    printf("Encrypting 96 bit...\n");
+    t = clock();
     uint32x3_t cipher_t_95_2 = encrypt(plain_t_95_2, E_95_2, N_95_2, 96, r2m_95_2_95_2);
+    t = clock() - t;
+    time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+    printf("Time taken = %f, Clock Cycles = %ld\n", time_taken, t);
     print_uint32x3("Encrypted Cipher Text", cipher_t_95_2);
 
     printf("Decrypting 96 bit...\n");
+    t = clock();
     uint32x3_t plain_t_res_95_2 = decrypt(cipher_t_95_2, D_95_2, N_95_2, 96, r2m_95_2_95_2);
+    t = clock() - t;
+    time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+    printf("Time taken = %f, Clock Cycles = %ld\n", time_taken, t);
     print_uint32x3("Decrypted Plain Text", plain_t_res_95_2);
 
 
