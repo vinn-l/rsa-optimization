@@ -240,6 +240,8 @@ uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, uint32x3_t e, uint32x3
     { // while e > 0
         if (e.value[2] & 1){                   // if e is odd
             // result = (result * b) % m; // result = result * b % m
+            // p < m
+            // result < m
             result = modular_multiplication_32x3(result, p, m, numBits);
         }
         // print_uint32x3("e", e);
@@ -293,15 +295,17 @@ int modular_exponentiation(int b, int e, int m)
 // should be used to maximize number of representable positive integers
 // changing to unsigned long long int should be done to allow 95 bit
 // integers
+
 uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M, uint32_t numBits)
 {
-    uint32x3_t T = {0};
+    uint32x3_t T_low = {0};
+    uint32_t T_high = 0;
+
     int m = numBits;
-    int carry = 0;
 
     for (int i = 0; i < m; i++)
     {
-        uint32_t n = (T.value[2] & 1) ^ ((rshift_uint32x3(X, i).value[2] & 1) & (Y.value[2] & 1));
+        uint32_t n = (T_low.value[2] & 1) ^ ((rshift_uint32x3(X, i).value[2] & 1) & (Y.value[2] & 1));
         // printf("T(0) = %d\r\n", (T.value[0] & 1));
         // print_uint32x3("X", X);
         // printf("i: %d", i);
@@ -315,14 +319,14 @@ uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M,
             // print_uint32x3("T", T);
             // print_uint32x3("Y", Y);
 
-            T = add_uint32x3(T, Y);
+            T_low = add_uint32x3(T_low, Y);
 
             // print_uint32x3("T_add", T);
 
             // // T smaller than Y means overflow
-            if (cmp_uint32x3(T, Y)){
+            if (cmp_uint32x3(T_low, Y)){
                 // printf("Overflow\n");
-                carry += 1;
+                T_high += 1;
             }
 
             // print_uint32x3("Result", T);
@@ -332,42 +336,43 @@ uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M,
             // print_uint32x3("T", T);
             // print_uint32x3("M", M);
 
-            T = add_uint32x3(T, M);
+            T_low = add_uint32x3(T_low, M);
 
             // print_uint32x3("T_add", T);
 
             // // T smaller than M means overflow
-            if (cmp_uint32x3(T, M)){
+            if (cmp_uint32x3(T_low, M)){
                 // printf("Overflow\n");
-                carry += 1;
-                // printf("%d\n", carry);
-
-                if (carry == 2){
-                    printf("carry is 2\n");
-                }
+                T_high += 1;
             }
 
             // print_uint32x3("Result", T);
         }
-
-        T = rshift_uint32x3(T, 1);
-        
-        // if carry is set
-        if (carry){
-            // print_uint32x3("T_shiftcarry", T);
-            T.value[0] += (carry << (31));
-            // print_uint32x3("T_shiftcarry", T);
-            carry = 0;
-        }
+        // if (!cmp_uint32x3(T_high, FOUR)){
+        //     print_uint32x3("T_high", T_high);
+        //     printf("T_high is >= 2\n");
+        // }
+        // T = rshift_uint32x3(T, 1);
+        // right shift T_low and T_high
+        T_low = rshift_uint32x3(T_low, 1);
+        T_low.value[0] += T_high << 31;
+        T_high >>= 1;
+    
     }
 
     // print_uint32x3("T", T);
     // print_uint32x3("M", M);
+    
+    // T_high at max can be 1 at this point
+    // if (T_high.value[2] & 1){
+    //     print_uint32x3("T_high", T_high);
+    //     printf("T_high is >= 1\n");
+    // }
 
-    if (!cmp_uint32x3(T, M)){
+    if (T_high || !cmp_uint32x3(T_low, M)){
         // print_uint32x3("T", T);
         // print_uint32x3("M", M);
-        T = sub_uint32x3(T, M);
+        T_low = sub_uint32x3(T_low, M);
         // print_uint32x3("T_sub", T);
     }
 
@@ -375,7 +380,7 @@ uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M,
     // print_uint32x3("M", M);
     // printf("%d\n", !cmp_uint32x3(T, M));
     
-    return T;
+    return T_low;
 }
 
 // // Code written based of MMM pseudocode from slides
@@ -524,166 +529,81 @@ int modular_multiplication(int X, int Y, int M, int numBits)
     return T;
 }
 
+uint32x3_t encrypt(uint32x3_t plain_t, uint32x3_t E, uint32x3_t N, int numBits, uint32x3_t r2m){
+    return modular_exponentiation_mont_32x3(plain_t, E, N, numBits, r2m);
+}
+
+uint32x3_t decrypt(uint32x3_t cipher_t, uint32x3_t D, uint32x3_t N, int numBits, uint32x3_t r2m){
+    return modular_exponentiation_mont_32x3(cipher_t, D, N, numBits, r2m);
+}
+
 int main(int argc, char *argv[])
 {
-    // 1. Basic Modular Multiplication Test from Slides
-    int X = 17;
-    int Y = 22;
-    int M = 23;
+    // 48 bit Keys
+    // n='a362fc7f41e5' e='000000010001' d='1db8365798ed'
 
-    int Z = modular_multiplication(X, Y, M, count_bits(M));
-    printf("Expected: 16\n"); // Answer should be 16
-    printf("Z = %d\n", Z); // Answer should be 16
+    uint32x3_t plain_t = {0, 0x00005000, 0x73000001}; // 0000500073000001
+    uint32x3_t N = {0, 0x0000a362, 0xfc7f41e5}; // 0000bc046e91ae5f
+    uint32x3_t E = {0, 0, 0x00010001};
+    uint32x3_t D = {0, 0x00001db8, 0x365798ed};
+    uint32x3_t r2m_95_2 = {0, 0x0000265b, 0xa323e7d0};
 
-    // 2. Basic Modular Multiplication Test from Slides for 95 bits
-    uint32x3_t X_95 = {0x00000000, 0x00000000, 17};
-    uint32x3_t Y_95 = {0x00000000, 0x00000000, 22};
-    uint32x3_t M_95 = {0x00000000, 0x00000000, 23};
-
-    uint32x3_t Z_95 = modular_multiplication_32x3(X_95, Y_95, M_95, 5);
-    printf("Expected: 0x10\n"); // Answer should be 16 or 0x10
-    print_uint32x3("Z_95", Z_95);
-
-    // 3. Basic Modular Exponentiation Test from Slides
-    int base = 4;
-    int exp = 13;
-    int mod = 497;
-
-    int modulo = modular_exponentiation(base, exp, mod);
-    printf("Expected: 445\n"); // Answer should be 445
-    printf("%d\n", modulo); // Answer should be 445
-
-    // 4. Montgomery Modular Exponentiation Test from Slides
+    printf("Encrypting 48 bit\n");
+    print_uint32x3("Plain Text", plain_t);
+    print_uint32x3("PQ", N);
+    print_uint32x3("E", E);
+    print_uint32x3("D", D);
+    uint32x3_t cipher_t = encrypt(plain_t, E, N, 48, r2m_95_2);
+    // printf("Expected Cipher Text = 0x51d6eef4c6ad\n");
+    print_uint32x3("Encrypted Cipher Text", cipher_t);
     
-    printf("num bits: %d\n", count_bits(mod));
-    modulo = modular_exponentiation_mont(base, exp, mod, 9);
-    printf("Expected: 445\n"); // Answer should be 445
-    printf("%d\n", modulo); // Answer should be 445
-
-    // 4. Montgomery Modular Exponentiation Test from Slides for 95 bits
-    uint32x3_t base_95 = {0x00000000, 0x00000000, 4};
-    uint32x3_t exp_95 = {0x00000000, 0x00000000, 13};
-    uint32x3_t mod_95 = {0x00000000, 0x00000000, 497};
-    uint32x3_t r2m_95 = {0,0,225};
-
-    uint32x3_t modulo_95 = modular_exponentiation_mont_32x3(base_95, exp_95, mod_95, 9, r2m_95);
-    printf("Expected: 0x1BD\n"); // Answer should be 445 or 0x1BD
-    print_uint32x3("modulo_95", modulo_95);
-
-    // int
-    int P_s = 55;
-    int N_s = 3233;
-    int E_s = 17;
-    int D_s = 2753;
-
-    // int cipher_s = modular_exponentiation(P_s, E_s, N_s);
-    int cipher_s = modular_exponentiation_mont(P_s, E_s, N_s, 12);
-    printf("Expected: 2653\n"); // Answer should be 2653
-    printf("cipher_s = %i\n", cipher_s);
-    // int plain_s = modular_exponentiation(cipher_s, D_s, N_s);
-    int plain_s = modular_exponentiation_mont(cipher_s, D_s, N_s, 12);
-    printf("Expected: 55\n"); // Answer should be 55
-    printf("plain_s = %i\n", plain_s);
-
-    // Simple E Test Case
-    // P = 221695237201051
-    // Q = 162886253482817
-    // N = 36111106602663634391602840667
-    // E = 17
-    // D = 59477116757327705569596493553 
-    // x = 28
-
-    // 95 bit E Test Case
-    // plaintext = 17297563458314651238923946123
-    // ciphertext = 29193194689960104856100570005
-    // P = 221695237201051 // 48 bit
-    // Q = 162886253482817 // 48 bit
-    // N = 36111106602663634391602840667 // P*Q, 48 bit * 48 bit = 95 bit
-    // E = 19414542554036919968371256159 // prime, therefore is relatively prime with (P-1)(Q-1)
-    // D = 36700924073403172721919985439 // 95 bit
-    // x = 19731648216590892426383796091
+    printf("Decrypting 48 bit\n");
+    uint32x3_t plain_t_res = decrypt(cipher_t, D, N, 48, r2m_95_2);
+    print_uint32x3("Decrypted Plain Text", plain_t_res);
+    printf("\n");
 
     // 95 bit Keys 
-    uint32x3_t plain_t = {0x37E4358A, 0x02B228EF, 0xBFFAC88B};
-    // uint32x3_t plain_t = {0, 0x00005000, 0x73000001}; // 0000500073000001
-    // uint32x3_t plain_t = {0, 0x00000000, 0x0000080501};
-    uint32x3_t N = {0x74AE6843, 0x79222DF5, 0xCAA0445B};
-    // uint32x3_t N = {0, 0x0000bc04, 0x6e91ae5f}; // 0000bc046e91ae5f
-    // uint32x3_t N = {0, 0, 0x00a73911};
-    uint32x3_t E = {0x3EBB554C, 0xBEB56109, 0x2B0B2B5F};
-    // uint32x3_t E = {0, 0, 0x00010001}; // 00010001
-    uint32x3_t D = {0x76964AF8, 0xA1660D33, 0x7A2F071F}; // 76964AF8A1660D337A2F071F
-    // uint32x3_t D = {0x76964AF8, 0xA1660D33, 0x004a051d}; // 76964AF8A1660D33004a051d idk what this is
-    // uint32x3_t r2m_95_2 = {0, 0x0000507f, 0xb204bae6}; // verified correct for 48 bit
-    uint32x3_t r2m_95_2 = {0x662F7452, 0xF2B207B4, 0xDF150A2D};
-    // uint32x3_t P = {0x00000000, 0x00000000, 55};
-    // uint32x3_t N = {0x00000000, 0x00000000, 3233};
-    // uint32x3_t E = {0x00000000, 0x00000000, 17};
-    // uint32x3_t D = {0x76964AF8, 0xA1660D33, 2753};
+    // n'74AE684379222DF5CAA0445B' e'3EBB554CBEB561092B0B2B5F' d'76964AF8A1660D337A2F071F'
+    uint32x3_t plain_t_95 = {0x37E4358A, 0x02B228EF, 0xBFFAC88B};
+    uint32x3_t N_95 = {0x74AE6843, 0x79222DF5, 0xCAA0445B};
+    uint32x3_t E_95 = {0x3EBB554C, 0xBEB56109, 0x2B0B2B5F};
+    uint32x3_t D_95 = {0x76964AF8, 0xA1660D33, 0x7A2F071F};
+    uint32x3_t r2m_95_2_95 = {0x662F7452, 0xF2B207B4, 0xDF150A2D};
 
-    // encrypt plaintext 55
-    // cipher text expected result 5740687887086918635830255485
-    // decrypt expected result 55
+    printf("Encrypting 95 bit\n");
+    print_uint32x3("Plain Text", plain_t_95);
+    print_uint32x3("PQ", N_95);
+    print_uint32x3("E", E_95);
+    print_uint32x3("D", D_95);
+    // printf("Expected Cipher Text = 0x5E540B6F3B7B69CC81648395\n");
+    uint32x3_t cipher_t_95 = encrypt(plain_t_95, E_95, N_95, 95, r2m_95_2_95);
+    print_uint32x3("Encrypted Cipher Text", cipher_t_95);
 
-    // uint32x3_t cipher_t = modular_exponentiation_mont_32x3(plain_t, E, N, 48, r2m_95_2);
-    // printf("Expected: 0x51d6eef4c6ad\n"); // Answer should be 29193194689960104856100570005, or 0x5E540B6F3B7B69CC81648395
+    printf("Decrypting 95 bit\n");
+    uint32x3_t plain_t_res_95 = decrypt(cipher_t_95, D_95, N_95, 95, r2m_95_2_95);
+    print_uint32x3("Decrypted Plain Text", plain_t_res_95);
+    printf("\n");
 
-    uint32x3_t cipher_t = modular_exponentiation_mont_32x3(plain_t, E, N, 95, r2m_95_2);
-    printf("Expected: 0x5E540B6F3B7B69CC81648395\n"); // Answer should be 29193194689960104856100570005, or 0x5E540B6F3B7B69CC81648395
-    
-    print_uint32x3("cipher_t", cipher_t);
-    uint32x3_t plain_t_res = modular_exponentiation_mont_32x3(cipher_t, D, N, 95, r2m_95_2);
-    printf("Expected: 0x37E4358A02B228EFBFFAC88B\n"); // Answer should be 17297563458314651238923946123, or 0x37E4358A02B228EFBFFAC88B
-    print_uint32x3("plain_t_res", plain_t_res);
-    // encrypt plaintext 17297563458314651238923946123
-    // cipher text expected result 29193194689960104856100570005
-    // decrypt expected result 36111106602663634391602840667
+    // Test Case 2 - 96 Bit
+    // n'a0d552aefb090ec4601429b7' e'000000000000000000010001' d'54a24d23655514b500278929'
+    uint32x3_t plain_t_95_2 = {0x37E4358A, 0x02B228EF, 0xBFFAC88B};
+    uint32x3_t N_95_2 = {0xa0d552ae, 0xfb090ec4, 0x601429b7};
+    uint32x3_t E_95_2 = {0x00000000, 0x00000000, 0x00010001};
+    uint32x3_t D_95_2 = {0x54a24d23,0x655514b5,0x00278929};
+    uint32x3_t r2m_95_2_95_2 = {0x599147d0, 0x0a1404f1 ,0xb605d62c};
 
-    // uint64_t a = 11446744073709551615ULL;
-    // uint64_t b = 1223472026853735807ULL;
+    printf("Encrypting 96 bit\n");
+    print_uint32x3("Plain Text", plain_t_95_2);
+    print_uint32x3("PQ", N_95_2);
+    print_uint32x3("E", E_95_2);
+    print_uint32x3("D", D_95_2);
+    uint32x3_t cipher_t_95_2 = encrypt(plain_t_95_2, E_95_2, N_95_2, 96, r2m_95_2_95_2);
+    print_uint32x3("Encrypted Cipher Text", cipher_t_95_2);
 
-    // uint64_t c = a + b;
-    // printf("uint_64");
-    // printf("%" PRIu64 "\n", c);
+    printf("Decrypting 96 bit\n");
+    uint32x3_t plain_t_res_95_2 = decrypt(cipher_t_95_2, D_95_2, N_95_2, 96, r2m_95_2_95_2);
+    print_uint32x3("Decrypted Plain Text", plain_t_res_95_2);
 
-    // Test addition 32x3
-    uint32x3_t x = {0x0FFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
-    uint32x3_t y = {0x00, 0x00, 0x01};
-    uint32x3_t r = add_uint32x3(x, y);
-    print_uint32x3("x", x);
-    print_uint32x3("y", y);
-    print_uint32x3("result", r);
 
-    // T = a967651f93186f4006a0bcd3
-    // M = 3adac9fab325ff4838b1e2df
-    uint32x3_t x_2 = {0xa967651f, 0xffffffff, 0xf6a0bcd3};
-    uint32x3_t y_2 = {0x3adac9fa, 0xffffffff, 0x38b1e2df};
-    uint32x3_t x_2_1 = add_uint32x3(x_2, y_2);
-    // uint32x3_t x_2_2 = add_uint32x3_2(x_2, y_2);
-    print_uint32x3("x_2", x_2);
-    print_uint32x3("y_2", y_2);
-    print_uint32x3("result", x_2_1);
-    // print_uint32x3("result_2", x_2_2);
-
-    // Test subtraction 32x3
-    uint32x3_t sub_a = {0x4FFFFFFF, 0x9FFFFFFF, 0x5FFFFFFF};
-    uint32x3_t sub_b = {0x0FFFFFFF, 0x9FFFFFFF, 0x6FFFFFFF};
-    uint32x3_t sub_r = sub_uint32x3(sub_a, sub_b);
-    print_uint32x3("sub_a", sub_a);
-    print_uint32x3("sub_b", sub_b);
-    print_uint32x3("sub_r", sub_r);
-
-    // Test compare 32x3
-    uint32x3_t cmp_a = {0x4FFFFFFF, 0x4FFFFFFF, 0x5FFFFFFF};
-    uint32x3_t cmp_b = {0x0FFFFFFF, 0x9FFFFFFF, 0x6FFFFFFF};
-    uint32_t cmp_r = cmp_uint32x3(cmp_a, cmp_b); // 0
-    uint32_t cmp_rr = cmp_uint32x3(cmp_b, cmp_a); // 1
-    uint32_t cmp_rrr = cmp_uint32x3(cmp_a, cmp_a); // 0
-    printf("cmp_r = %" PRIu32 "\ncmp_rr = %" PRIu32 "\ncmp_rrr = %" PRIu32 "\n", cmp_r, cmp_rr, cmp_rrr);
-
-    // Test rshift
-    uint32x3_t rs_a = {0x12345678, 0x01234567, 0x98765432};
-    uint32x3_t rs_r = rshift_uint32x3(rs_a, 1);
-    print_uint32x3("rs_r", rs_r); //91A2B3C0091A2B3CC3B2A19
     return 0;
 }
