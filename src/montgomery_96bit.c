@@ -82,7 +82,6 @@ uint32_t cmp_uint32x3(uint32x3_t x, uint32x3_t y)
 
 uint32x3_t rshift_uint32x3(uint32x3_t x, int i)
 {
-    // shift right by 1
     uint32x3_t result = {0};
 
     //if shift is more than or equal to 64
@@ -145,7 +144,7 @@ uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, uint32x3_t e, uint32x3
 // Code written based of MMM pseudocode from slides
 uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M, uint32_t numBits)
 {
-    // Based on tests, 95 bit keys seems to not result in T_high overflowing past 1 
+    // Based on tests, 95 bit keys seems to not result in T_high overflowing past 1
     // However T_high is still required and might as well make it 32 bits if it is already going to take up a register.
     uint32x3_t T_low = {0};
     uint32_t T_high = 0;
