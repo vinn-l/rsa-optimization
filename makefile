@@ -1,5 +1,5 @@
-TARGET = montgomery montgomery_96bit
-TARGET_ASM = montgomery_asm montgomery_96bit_asm
+TARGET = montgomery montgomery_96bit montgomery_96bit_optimized
+TARGET_ASM = montgomery_asm montgomery_96bit_asm montgomery_96bit_optimized_asm
 
 LIBS = -lm
 CC = gcc
@@ -17,13 +17,19 @@ all: default asm
 montgomery: $(SRC_DIR)/montgomery.c
 	$(CC) $(CFLAGS) $< -o $@
 
+montgomery_asm: $(SRC_DIR)/montgomery.c
+	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
+
 montgomery_96bit: $(SRC_DIR)/montgomery_96bit.c
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@ 
 
 montgomery_96bit_asm: $(SRC_DIR)/montgomery_96bit.c
 	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
 
-montgomery_asm: $(SRC_DIR)/montgomery.c
+montgomery_96bit_optimized: $(SRC_DIR)/montgomery_96bit_optimized.c
+	$(CC) $(CFLAGS) $< -o $@
+
+montgomery_96bit_optimized_asm: $(SRC_DIR)/montgomery_96bit_optimized.c
 	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
 
 clean:
