@@ -1,22 +1,15 @@
 #include <stdio.h>
 #include <math.h>
 
-// https://en.wikipedia.org/wiki/Modular_exponentiation
-// Modular Exponentiation based on slides and also pseudocode on Wikipedia.
-int modular_exponentiation(int b, int e, int m)
-{
-    int result = 1;
-
-    if (1 & e) // if e is odd
-        result = b;
-    while (e > 0)
-    { // while e > 0
-        e >>= 1;                       // e = e/2
-        b = (b * b) % m;               // b = b^2 % m
-        if (e & 1)                     // if e is odd
-            result = (result * b) % m; // result = result * b % m
+int count_bits(int i){
+    int m = 0;
+    while (i)
+    {
+        m++;
+        i >>= 1;
     }
-    return result;
+
+    return m;
 }
 
 // Code written based of MMM pseudocode from slides
@@ -32,13 +25,8 @@ int modular_multiplication(int X, int Y, int M)
     int T = 0;
 
     // Find m, number of bits in M
-    int m = 0;
-    int temp = M;
-    while (temp)
-    {
-        m++;
-        temp >>= 1;
-    }
+    int m = count_bits(M);
+    
     // Observation: Loop unrolling can be performed, especially since
     // only 2 operations in the loop, and the second operation is dependent
     // on first.
@@ -62,7 +50,49 @@ int modular_multiplication(int X, int Y, int M)
     return T;
 }
 
-int main(int argc, char *argv[])
+// https://en.wikipedia.org/wiki/Modular_exponentiation
+// Modular Exponentiation based on slides and also pseudocode on Wikipedia.
+int modular_exponentiation(int b, int e, int m)
+{
+    int result = 1;
+
+    if (1 & e) // if e is odd
+        result = b;
+    while (e > 0)
+    { // while e > 0
+        e >>= 1;                       // e = e/2
+        b = (b * b) % m;               // b = b^2 % m
+        if (e & 1)                     // if e is odd
+            result = (result * b) % m; // result = result * b % m
+    }
+    return result;
+}
+
+// Modular Exponentiation used with Montgomery Multiplication
+int modular_exponentiation_mont(int b, int e, int m, int numBits)
+{
+    int r2m = (1 << (2 * numBits)) % m;
+    int result = modular_multiplication(1, r2m, m);
+    int p = modular_multiplication(b, r2m, m);
+
+    // if (1 & e) // if e is odd
+    //     result = b;
+    while (e > 0)
+    { // while e > 0
+        if (e & 1)                     // if e is odd
+            // result = (result * b) % m; // result = result * b % m
+            result = modular_multiplication(result, p, m);
+
+        e >>= 1;                       // e = e/2
+        // b = (b * b) % m;               // b = b^2 % m
+        p = modular_multiplication(p, p, m);
+    }
+    result = modular_multiplication(1, result, m);
+
+    return result;
+}
+
+int main()
 {
     // Basic Modular Multiplication Test from Slides
     int X = 17;
@@ -79,5 +109,13 @@ int main(int argc, char *argv[])
 
     int modulo = modular_exponentiation(base, exp, mod);
     printf("%d\n", modulo); // Answer should be 445
+
+    // Basic Modular Exponentiation Test with Montgomery from Slides
+    int base_m = 4;
+    int exp_m = 13;
+    int mod_m = 497;
+
+    int modulo_m = modular_exponentiation_mont(base_m, exp_m, mod_m, count_bits(mod_m));
+    printf("%d\n", modulo_m); // Answer should be 445
     return 0;
 }
