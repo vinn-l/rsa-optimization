@@ -29,7 +29,7 @@ montgomery_96bit_optimized_v3.c
 
 montgomery_96bit_optimized_v4.c
 - Register keywords to aid the compiler
-- **The final fully optimized version that provides the best performance results**
+- **This is the final iteration of the fully optimized version that provides the best performance results**
 
 mmm_95bit_before_loop_unroll_test.c & mmm_95bit_after_loop_unroll_test.c
 - Variant of montgomery_96bit_optimized_v4.c that only tests specifically 95-bit keys in a loop
