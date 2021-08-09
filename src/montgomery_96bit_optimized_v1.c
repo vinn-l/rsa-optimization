@@ -16,43 +16,44 @@ uint32x3_t rshift_uint32x3(uint32x3_t, int);
 uint32_t cmp_uint32x3(uint32x3_t, uint32x3_t);
 void print_uint32x3(char*, uint32x3_t);
 
-uint32x3_t modular_multiplication_32x3(uint32x3_t, uint32x3_t, uint32x3_t, uint32_t);
-uint32x3_t modular_exponentiation_32x3(uint32x3_t, uint32x3_t, uint32x3_t, uint32_t, uint32x3_t);
+uint32x3_t modular_multiplication_32x3(uint32x3_t, uint32x3_t, uint32x3_t, int);
+uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t, uint32x3_t, uint32x3_t, int, uint32x3_t);
 
 uint32x3_t add_uint32x3(uint32x3_t x, uint32x3_t y)
 {
     uint32x3_t result = {0};
-    unsigned int carry = 0;
-    int i = sizeof(x.value)/sizeof(x.value[0]);
-    /* Start from LSB */
-    while(i--)
-    {
+    int carry = 0;
+
+    for (int i = 2; i >= 0; i--){
+        // Start from LSB
         uint64_t tmp = (uint64_t)x.value[i] + y.value[i] + carry;    
         result.value[i] = (uint32_t)tmp;
-        /* Remember the carry */
+        // Remember the carry
         carry = tmp >> 32;
     }
+
     return result;
 }
 
 // Assumes that x >= y
 uint32x3_t sub_uint32x3(uint32x3_t x, uint32x3_t y)
 {
+    // Optimization: Result is used very often, use register keyword
     uint32x3_t result = {0};
 
 	uint64_t res;
 	uint64_t tmp1;
 	uint64_t tmp2;
 	int borrow = 0;
-	int i = sizeof(x.value)/sizeof(x.value[0]);
-	while(i--)
-	{
-		tmp1 = (uint64_t)x.value[i] + ((uint64_t)0xFFFFFFFF + 1); /* + number_base */
-		tmp2 = (uint64_t)y.value[i] + borrow;
-		res = (tmp1 - tmp2);
-		result.value[i] = (uint32_t)(res & (uint64_t)0xFFFFFFFF); /* "modulo number_base" == "% (number_base - 1)" if number_base is 2^N */
-		borrow = (res <= (uint64_t)0xFFFFFFFF);
-	}
+
+    for (int i = 2; i >= 0; i--){
+        tmp1 = (uint64_t)x.value[i] + ((uint64_t)0xFFFFFFFF + 1);
+        tmp2 = (uint64_t)y.value[i] + borrow;
+        res = (tmp1 - tmp2);
+        result.value[i] = (uint32_t)(res & (uint64_t)0xFFFFFFFF);
+        borrow = (res <= (uint64_t)0xFFFFFFFF);
+    }
+
     return result;
 }
 
@@ -82,9 +83,10 @@ uint32_t cmp_uint32x3(uint32x3_t x, uint32x3_t y)
 
 uint32x3_t rshift_uint32x3(uint32x3_t x, int i)
 {
+    // Optimization: Result is used very often, use register keyword
     uint32x3_t result = {0};
 
-    //if shift is more than or equal to 64
+    // if shift is more than or equal to 64
     if (i >= 64){
         result.value[2] = x.value[0];
         result.value[1] = 0;
@@ -120,13 +122,13 @@ void print_uint32x3(char *str, uint32x3_t x)
     printf("%s = %08x%08x%08x\r\n", str, x.value[0], x.value[1], x.value[2]);
 }
 
-uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, uint32x3_t e, uint32x3_t m, uint32_t numBits, uint32x3_t r2m)
+uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, uint32x3_t e, uint32x3_t m, int numBits, uint32x3_t r2m)
 {
     uint32x3_t ONE = {0,0,1};
     uint32x3_t result = modular_multiplication_32x3(ONE, r2m, m, numBits);
     uint32x3_t p = modular_multiplication_32x3(b, r2m, m, numBits);
 
-    // Check least first is more efficient
+    // Optimization: Check low first, then mid, then high is more efficient
     // While e > 0
     while (e.value[2] || e.value[1] || e.value[0])
     { 
@@ -142,45 +144,66 @@ uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, uint32x3_t e, uint32x3
 }
 
 // Code written based of MMM pseudocode from slides
-uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M, uint32_t numBits)
+uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M, int numBits)
 {
-    // Based on tests, 95 bit keys seems to not result in T_high overflowing past 1
+    // Based on tests, 95 bit keys seems to not result in T_high overflowing past 1 
     // However T_high is still required and might as well make it 32 bits if it is already going to take up a register.
     uint32x3_t T_low = {0};
     uint32_t T_high = 0;
+    uint32_t n;
 
-    int m = numBits;
+    // The lowest bit of X_32local is i-th bit
 
-    for (int i = 0; i < m; i++)
+    // Optimization: The algorithm only requires the i-th bit of X, 
+    // therefore a 32-bit register can be used to store relevent 32-bit chunks (high, mid, or low) of 96-bit X.
+    uint32_t X_32local;
+
+    // Optimization: The index required from Y is always the 0-th index, or Y(0), thus this can be saved into a register and be reused for all loop iterations.
+    uint32_t Y_0 = Y.value[2] & 1;
+    
+    for (int i = 0; i < numBits; i++)
     {
-        // T(0) XOR (X(i) AND Y(0))
-        uint32_t n = (T_low.value[2] & 1) ^ ((rshift_uint32x3(X, i).value[2] & 1) & (Y.value[2] & 1));
+        // Get the relevant 32-bits that is required and keep them into X_32local. 
+        // X_32local will then be used instead of X to get the i-th bit, 
+        // and will potentially save us registers because X_32local only requires 1 register whereas X requires 3.
+        if(!(i % 32)){
+            // This occurs only once every 32 loop iterations
+            X_32local = X.value[2];
+            X = rshift_uint32x3(X, 32);
+        }
+        // n = T(0) XOR (X(i) AND Y(0))
+        n = (T_low.value[2] & 1) ^ ((X_32local & 1) & Y_0);
 
-        // Do if operations here to avoid multiplication operation
-        if (rshift_uint32x3(X, i).value[2] & 1){
+        // T + X(i)Y
+        if (X_32local & 1){
             T_low = add_uint32x3(T_low, Y);
 
-            // T smaller than Y means overflow occured
+            // T < Y means overflow occured
             if (cmp_uint32x3(T_low, Y)){
                 T_high += 1;
             }
         }
+
+        // T + nM
         if (n){
             T_low = add_uint32x3(T_low, M);
 
-            // // T smaller than M means overflow occured
+            // // T < M means overflow occured
             if (cmp_uint32x3(T_low, M)){
                 T_high += 1;
             }
         }
-        // Right shift T_low and T_high
+        
+        // T >> 1
         T_low = rshift_uint32x3(T_low, 1);
         T_low.value[0] += T_high << 31;
         T_high >>= 1;
-    
+
+        // Shift X_32local down by 1 for every iteration to ensure i-th bit is always the lowest bit
+        X_32local >>= 1;
     }
 
-    // If T>= M, then T = T - M
+    // If T >= M, then T = T - M
     if (T_high & 1 || !cmp_uint32x3(T_low, M)){
         T_low = sub_uint32x3(T_low, M);
     }

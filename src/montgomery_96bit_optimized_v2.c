@@ -6,7 +6,10 @@
 
 // uint32x3_t consists of array of 3 uint32_t
 typedef struct uint32x3_t {
-    uint32_t value[3];
+    // Optimization: Array access requires accessing memory, change array to variables to allow storing to register.
+    uint32_t high;
+    uint32_t mid;
+    uint32_t low;
 } uint32x3_t;
 
 // uint32x3_t operations, only these are required and thus implemented
@@ -16,22 +19,29 @@ uint32x3_t rshift_uint32x3(uint32x3_t, int);
 uint32_t cmp_uint32x3(uint32x3_t, uint32x3_t);
 void print_uint32x3(char*, uint32x3_t);
 
-uint32x3_t modular_multiplication_32x3(uint32x3_t, uint32x3_t, uint32x3_t, uint32_t);
-uint32x3_t modular_exponentiation_32x3(uint32x3_t, uint32x3_t, uint32x3_t, uint32_t, uint32x3_t);
+uint32x3_t modular_multiplication_32x3(uint32x3_t, uint32x3_t, uint32x3_t, int);
+uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t, uint32x3_t, uint32x3_t, int, uint32x3_t);
 
 uint32x3_t add_uint32x3(uint32x3_t x, uint32x3_t y)
 {
     uint32x3_t result = {0};
-    unsigned int carry = 0;
-    int i = sizeof(x.value)/sizeof(x.value[0]);
-    /* Start from LSB */
-    while(i--)
-    {
-        uint64_t tmp = (uint64_t)x.value[i] + y.value[i] + carry;    
-        result.value[i] = (uint32_t)tmp;
-        /* Remember the carry */
-        carry = tmp >> 32;
-    }
+    int carry = 0;
+
+    // Optimization: Loop Unrolling
+    // Start from LSB
+    uint64_t tmp = (uint64_t)x.low + y.low; 
+    result.low = (uint32_t)tmp;
+    // Remember the carry
+    carry = tmp >> 32;
+
+    tmp = (uint64_t)x.mid + y.mid + carry;    
+    result.mid = (uint32_t)tmp;
+    // Remember the carry
+    carry = tmp >> 32;
+
+    tmp = (uint64_t)x.high + y.high + carry;    
+    result.high = (uint32_t)tmp;
+
     return result;
 }
 
@@ -44,15 +54,25 @@ uint32x3_t sub_uint32x3(uint32x3_t x, uint32x3_t y)
 	uint64_t tmp1;
 	uint64_t tmp2;
 	int borrow = 0;
-	int i = sizeof(x.value)/sizeof(x.value[0]);
-	while(i--)
-	{
-		tmp1 = (uint64_t)x.value[i] + ((uint64_t)0xFFFFFFFF + 1); /* + number_base */
-		tmp2 = (uint64_t)y.value[i] + borrow;
-		res = (tmp1 - tmp2);
-		result.value[i] = (uint32_t)(res & (uint64_t)0xFFFFFFFF); /* "modulo number_base" == "% (number_base - 1)" if number_base is 2^N */
-		borrow = (res <= (uint64_t)0xFFFFFFFF);
-	}
+
+    // Optimization: Loop Unrolling
+    tmp1 = (uint64_t)x.low + ((uint64_t)0xFFFFFFFF + 1);
+    tmp2 = (uint64_t)y.low;
+    res = (tmp1 - tmp2);
+    result.low = (uint32_t)(res & (uint64_t)0xFFFFFFFF);
+    borrow = (res <= (uint64_t)0xFFFFFFFF);
+
+    tmp1 = (uint64_t)x.mid + ((uint64_t)0xFFFFFFFF + 1);
+    tmp2 = (uint64_t)y.mid + borrow;
+    res = (tmp1 - tmp2);
+    result.mid = (uint32_t)(res & (uint64_t)0xFFFFFFFF);
+    borrow = (res <= (uint64_t)0xFFFFFFFF);
+
+    tmp1 = (uint64_t)x.high + ((uint64_t)0xFFFFFFFF + 1);
+    tmp2 = (uint64_t)y.high + borrow;
+    res = (tmp1 - tmp2);
+    result.high = (uint32_t)(res & (uint64_t)0xFFFFFFFF);
+
     return result;
 }
 
@@ -60,19 +80,19 @@ uint32x3_t sub_uint32x3(uint32x3_t x, uint32x3_t y)
 uint32_t cmp_uint32x3(uint32x3_t x, uint32x3_t y)
 {
     // check high
-    if (x.value[0] > y.value[0]){
+    if (x.high > y.high){
         return 0;
     }
 
-    if (x.value[0] == y.value[0]){
+    if (x.high == y.high){
         // check mid
-        if (x.value[1] > y.value[1]){
+        if (x.mid > y.mid){
             return 0;
         }
 
-        if (x.value[1] == y.value[1]){
+        if (x.mid == y.mid){
             // check low
-            if (x.value[2] >= y.value[2]){
+            if (x.low >= y.low){
                 return 0;
             }
         }
@@ -84,56 +104,56 @@ uint32x3_t rshift_uint32x3(uint32x3_t x, int i)
 {
     uint32x3_t result = {0};
 
-    //if shift is more than or equal to 64
+    // if shift is more than or equal to 64
     if (i >= 64){
-        result.value[2] = x.value[0];
-        result.value[1] = 0;
-        result.value[0] = 0;
+        result.low = x.high;
+        result.mid = 0;
+        result.high = 0;
         i -= 64;
-        result.value[2] >>= i;
+        result.low >>= i;
         return result;
     }
 
     //if shift is more than or equal to 32
     if (i >= 32){
-        result.value[2] = x.value[1];
-        result.value[1] = x.value[0];
-        result.value[0] = 0;
+        result.low = x.mid;
+        result.mid = x.high;
+        result.high = 0;
         i -= 32;
-        result.value[2] >>= i;
-        result.value[2] += result.value[1] << (32 - i);
-        result.value[1] >>= i;
+        result.low >>= i;
+        result.low += result.mid << (32 - i);
+        result.mid >>= i;
         return result;
     }
 
-    result.value[2] = x.value[2] >> i;
-    result.value[2] += x.value[1] << (32 - i);
-    result.value[1] = x.value[1] >> i;
-    result.value[1] += x.value[0] << (32 - i);
-    result.value[0] = x.value[0] >> i;
+    result.low = x.low >> i;
+    result.low += x.mid << (32 - i);
+    result.mid = x.mid >> i;
+    result.mid += x.high << (32 - i);
+    result.high = x.high >> i;
     return result;
 }
 
 // Function to easily print a uint32x3_t in Hex.
 void print_uint32x3(char *str, uint32x3_t x)
 {
-    printf("%s = %08x%08x%08x\r\n", str, x.value[0], x.value[1], x.value[2]);
+    printf("%s = %08x%08x%08x\r\n", str, x.high, x.mid, x.low);
 }
 
-uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, uint32x3_t e, uint32x3_t m, uint32_t numBits, uint32x3_t r2m)
+uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, uint32x3_t e, uint32x3_t m, int numBits, uint32x3_t r2m)
 {
     uint32x3_t ONE = {0,0,1};
     uint32x3_t result = modular_multiplication_32x3(ONE, r2m, m, numBits);
     uint32x3_t p = modular_multiplication_32x3(b, r2m, m, numBits);
 
-    // Check least first is more efficient
+    // Optimization: Check low first, then mid, then high is more efficient
     // While e > 0
-    while (e.value[2] || e.value[1] || e.value[0])
+    while (e.low || e.mid || e.high)
     { 
-        if (e.value[2] & 1){                   // if e is odd
+        if (e.low & 1){ 
             result = modular_multiplication_32x3(result, p, m, numBits);
         }
-        e = rshift_uint32x3(e, 1);                      // e = e/2
+        e = rshift_uint32x3(e, 1);
         p = modular_multiplication_32x3(p, p, m, numBits);
     }
     result = modular_multiplication_32x3(result, ONE, m, numBits);
@@ -142,45 +162,67 @@ uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, uint32x3_t e, uint32x3
 }
 
 // Code written based of MMM pseudocode from slides
-uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M, uint32_t numBits)
+uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M, int numBits)
 {
-    // Based on tests, 95 bit keys seems to not result in T_high overflowing past 1
+    // Based on tests, 95 bit keys seems to not result in T_high overflowing past 1 
     // However T_high is still required and might as well make it 32 bits if it is already going to take up a register.
     uint32x3_t T_low = {0};
     uint32_t T_high = 0;
+    uint32_t n;
 
-    int m = numBits;
+    // The lowest bit of X_32local is i-th bit
 
-    for (int i = 0; i < m; i++)
+    // Optimization: The algorithm only requires the i-th bit of X, 
+    // therefore a 32-bit register can be used to store relevent 32-bit chunks (high, mid, or low) of 96-bit X.
+    uint32_t X_32local;
+
+    // Optimization: The index required from Y is always the 0-th index, or Y(0), thus this can be saved into a register and be reused for all loop iterations.
+    uint32_t Y_0 = Y.low & 1;
+    
+    for (int i = 0; i < numBits; i++)
     {
-        // T(0) XOR (X(i) AND Y(0))
-        uint32_t n = (T_low.value[2] & 1) ^ ((rshift_uint32x3(X, i).value[2] & 1) & (Y.value[2] & 1));
+        // Get the relevant 32-bits that is required and keep them into X_32local. 
+        // X_32local will then be used instead of X to get the i-th bit, 
+        // and will potentially save us registers because X_32local only requires 1 register whereas X requires 3.
+        if(!(i % 32)){
+            // This occurs only once every 32 loop iterations
+            X_32local = X.low;
+            X = rshift_uint32x3(X, 32);
+        }
 
-        // Do if operations here to avoid multiplication operation
-        if (rshift_uint32x3(X, i).value[2] & 1){
+        // n = T(0) XOR (X(i) AND Y(0))
+        n = (T_low.low & 1) ^ ((X_32local & 1) & Y_0);
+
+        // T + X(i)Y
+        if (X_32local & 1){
             T_low = add_uint32x3(T_low, Y);
 
-            // T smaller than Y means overflow occured
+            // T < Y means overflow occured
             if (cmp_uint32x3(T_low, Y)){
                 T_high += 1;
             }
         }
+
+        // T + nM
         if (n){
             T_low = add_uint32x3(T_low, M);
 
-            // // T smaller than M means overflow occured
+            // // T < M means overflow occured
             if (cmp_uint32x3(T_low, M)){
                 T_high += 1;
             }
         }
-        // Right shift T_low and T_high
+        
+        // T >> 1
         T_low = rshift_uint32x3(T_low, 1);
-        T_low.value[0] += T_high << 31;
+        T_low.high += T_high << 31;
         T_high >>= 1;
-    
+
+        // Shift X_32local down by 1 for every iteration to ensure i-th bit is always the lowest bit
+        X_32local >>= 1;
     }
 
-    // If T>= M, then T = T - M
+    // If T >= M, then T = T - M
     if (T_high & 1 || !cmp_uint32x3(T_low, M)){
         T_low = sub_uint32x3(T_low, M);
     }
