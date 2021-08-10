@@ -1,5 +1,5 @@
-TARGET = montgomery_32bit montgomery_96bit montgomery_96bit_optimized_v1 montgomery_96bit_optimized_v2 montgomery_96bit_optimized_v3 montgomery_96bit_optimized_v4 montgomery_96bit_optimized_v2neon mmm_95bit_before_loop_unroll_test mmm_95bit_after_loop_unroll_test
-TARGET_ASM = montgomery_32bit_asm montgomery_96bit_asm montgomery_96bit_optimized_v1_asm montgomery_96bit_optimized_v2_asm montgomery_96bit_optimized_v3_asm montgomery_96bit_optimized_v4_asm montgomery_96bit_optimized_v2neon_asm mmm_95bit_before_loop_unroll_test_asm mmm_95bit_after_loop_unroll_test_asm
+TARGET = montgomery_96bit montgomery_96bit_optimized_v1 montgomery_96bit_optimized_v2 montgomery_96bit_optimized_v3 montgomery_96bit_optimized_v4 montgomery_96bit_optimized_v2neon mmm_95bit_before_loop_unroll_test mmm_95bit_after_loop_unroll_test
+TARGET_ASM = montgomery_96bit_asm montgomery_96bit_optimized_v1_asm montgomery_96bit_optimized_v2_asm montgomery_96bit_optimized_v3_asm montgomery_96bit_optimized_v4_asm montgomery_96bit_optimized_v2neon_asm mmm_95bit_before_loop_unroll_test_asm mmm_95bit_after_loop_unroll_test_asm
 
 LIBS = -lm
 CC = gcc
@@ -15,12 +15,6 @@ ASM_DIR := asm
 default: $(TARGET)
 asm: $(TARGET_ASM)
 all: default asm
-
-montgomery_32bit: $(SRC_DIR)/montgomery_32bit.c
-	$(CC) $(CFLAGS) $< -o $@
-
-montgomery_32bit_asm: $(SRC_DIR)/montgomery_32bit.c
-	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S -o $(ASM_DIR)/$@.s
 
 montgomery_96bit: $(SRC_DIR)/montgomery_96bit.c
 	$(CC) $(CFLAGS) $< -o $@
