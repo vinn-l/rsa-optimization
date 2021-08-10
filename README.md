@@ -28,7 +28,7 @@ montgomery_96bit_optimized_v2neon.c
 - **Neon is not pursued further**
 
 montgomery_96bit_optimized_v3.c
-- Changed rshift1_uint32x3 from shifting by argument i to 2 routines handling specifically shift by 1 and shift by 32
+- Rewrote rshift1_uint32x3 function from shifting by argument i to 2 function handling specifically shift by 1 and shift by 32
 
 montgomery_96bit_optimized_v4.c
 - Register keywords to aid the compiler
