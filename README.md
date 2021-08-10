@@ -9,6 +9,7 @@ To build all files (assembly and executable), run **make all**
 ### .c files
 montgomery_96bit.c
 - Original functional 96-bit RSA Encryption Decryption algorithm
+- Operator Strength Reduction performed to avoid 96bit multiplications in MMM
 	
 montgomery_96bit_optimized_v1.c
 - Performed Optimization to MMM
