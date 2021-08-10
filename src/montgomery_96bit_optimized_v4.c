@@ -135,11 +135,11 @@ void print_uint32x3(char *str, uint32x3_t x)
     printf("%s = %08x%08x%08x\r\n", str, x.high, x.mid, x.low);
 }
 
-uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, register uint32x3_t e, register uint32x3_t m, int numBits, uint32x3_t r2m)
+uint32x3_t modular_exponentiation_mont_32x3(uint32x3_t b, register uint32x3_t e, register uint32x3_t m, int numBits, uint32x3_t r2_mod)
 {
     uint32x3_t ONE = {0,0,1};
-    register uint32x3_t result = modular_multiplication_32x3(ONE, r2m, m, numBits);
-    register uint32x3_t p = modular_multiplication_32x3(b, r2m, m, numBits);
+    register uint32x3_t result = modular_multiplication_32x3(ONE, r2_mod, m, numBits);
+    register uint32x3_t p = modular_multiplication_32x3(b, r2_mod, m, numBits);
 
     // Optimization: Check low first, then mid, then high is more efficient
     // While e > 0
@@ -225,12 +225,12 @@ uint32x3_t modular_multiplication_32x3(uint32x3_t X, uint32x3_t Y, uint32x3_t M,
     return T_low;
 }
 
-uint32x3_t encrypt(uint32x3_t plain_t, uint32x3_t E, uint32x3_t N, int numBits, uint32x3_t r2m){
-    return modular_exponentiation_mont_32x3(plain_t, E, N, numBits, r2m);
+uint32x3_t encrypt(uint32x3_t plain_t, uint32x3_t E, uint32x3_t N, int numBits, uint32x3_t r2_mod){
+    return modular_exponentiation_mont_32x3(plain_t, E, N, numBits, r2_mod);
 }
 
-uint32x3_t decrypt(uint32x3_t cipher_t, uint32x3_t D, uint32x3_t N, int numBits, uint32x3_t r2m){
-    return modular_exponentiation_mont_32x3(cipher_t, D, N, numBits, r2m);
+uint32x3_t decrypt(uint32x3_t cipher_t, uint32x3_t D, uint32x3_t N, int numBits, uint32x3_t r2_mod){
+    return modular_exponentiation_mont_32x3(cipher_t, D, N, numBits, r2_mod);
 }
 
 int main()
@@ -244,7 +244,7 @@ int main()
     uint32x3_t N = {0, 0x0000a362, 0xfc7f41e5};
     uint32x3_t E = {0, 0, 0x00010001};
     uint32x3_t D = {0, 0x00001db8, 0x365798ed};
-    uint32x3_t r2m_48_2 = {0, 0x0000265b, 0xa323e7d0};
+    uint32x3_t r2_mod_48_2 = {0, 0x0000265b, 0xa323e7d0};
 
     printf("Perfoming Test 1 - 48 bit keys\n");
     printf("----------------------\n");
@@ -254,7 +254,7 @@ int main()
     print_uint32x3("D", D);
     printf("Encrypting 48 bit...\n");
     t = clock();
-    uint32x3_t cipher_t = encrypt(plain_t, E, N, 48, r2m_48_2);
+    uint32x3_t cipher_t = encrypt(plain_t, E, N, 48, r2_mod_48_2);
     t = clock() - t;
     total += t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
@@ -263,7 +263,7 @@ int main()
     
     printf("Decrypting 48 bit...\n");
     t = clock();
-    uint32x3_t plain_t_res = decrypt(cipher_t, D, N, 48, r2m_48_2);
+    uint32x3_t plain_t_res = decrypt(cipher_t, D, N, 48, r2_mod_48_2);
     t = clock() - t;
     total += t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
@@ -277,7 +277,7 @@ int main()
     uint32x3_t N_95 = {0x74AE6843, 0x79222DF5, 0xCAA0445B};
     uint32x3_t E_95 = {0x3EBB554C, 0xBEB56109, 0x2B0B2B5F};
     uint32x3_t D_95 = {0x76964AF8, 0xA1660D33, 0x7A2F071F};
-    uint32x3_t r2m_95_2_95 = {0x662F7452, 0xF2B207B4, 0xDF150A2D};
+    uint32x3_t r2_mod_95_2_95 = {0x662F7452, 0xF2B207B4, 0xDF150A2D};
 
     printf("Perfoming Test 2 - 95 bit keys\n");
     printf("----------------------\n");
@@ -289,7 +289,7 @@ int main()
     // printf("Expected Cipher Text = 0x5E540B6F3B7B69CC81648395\n");
     
     t = clock();
-    uint32x3_t cipher_t_95 = encrypt(plain_t_95, E_95, N_95, 95, r2m_95_2_95);
+    uint32x3_t cipher_t_95 = encrypt(plain_t_95, E_95, N_95, 95, r2_mod_95_2_95);
     t = clock() - t;
     total += t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
@@ -298,7 +298,7 @@ int main()
 
     printf("Decrypting 95 bit...\n");
     t = clock();
-    uint32x3_t plain_t_res_95 = decrypt(cipher_t_95, D_95, N_95, 95, r2m_95_2_95);
+    uint32x3_t plain_t_res_95 = decrypt(cipher_t_95, D_95, N_95, 95, r2_mod_95_2_95);
     t = clock() - t;
     total += t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
@@ -312,7 +312,7 @@ int main()
     uint32x3_t N_95_2 = {0x45C23E1A, 0x777C026F, 0xA71EA401};
     uint32x3_t E_95_2 = {0x27486181, 0xA10E6C37, 0xF040B215};
     uint32x3_t D_95_2 = {0xC7651F5D, 0x549B48FA, 0xABA84351};
-    uint32x3_t r2m_95_2_95_2 = {0x2631828, 0xD2697122, 0x03B69C53};
+    uint32x3_t r2_mod_95_2_95_2 = {0x2631828, 0xD2697122, 0x03B69C53};
 
     printf("Perfoming Test 3 - 95 bit keys\n");
     printf("----------------------\n");
@@ -324,7 +324,7 @@ int main()
     // printf("Expected Cipher Text = 0x5E540B6F3B7B69CC81648395\n");
     
     t = clock();
-    uint32x3_t cipher_t_95_2 = encrypt(plain_t_95_2, E_95_2, N_95_2, 95, r2m_95_2_95_2);
+    uint32x3_t cipher_t_95_2 = encrypt(plain_t_95_2, E_95_2, N_95_2, 95, r2_mod_95_2_95_2);
     t = clock() - t;
     total += t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
@@ -333,7 +333,7 @@ int main()
 
     printf("Decrypting 95 bit...\n");
     t = clock();
-    uint32x3_t plain_t_res_95_2 = decrypt(cipher_t_95_2, D_95_2, N_95_2, 95, r2m_95_2_95_2);
+    uint32x3_t plain_t_res_95_2 = decrypt(cipher_t_95_2, D_95_2, N_95_2, 95, r2_mod_95_2_95_2);
     t = clock() - t;
     total += t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
@@ -347,7 +347,7 @@ int main()
     uint32x3_t N_95_3 = {0x45C23E1A, 0x777C026F, 0xA71EA401};
     uint32x3_t E_95_3 = {0x00000000, 0x00000000, 0x00010001};
     uint32x3_t D_95_3 = {0x6F9F0A84, 0x8B1E82FA, 0xF904BA29};
-    uint32x3_t r2m_95_2_95_3 = {0x2631828, 0xD2697122, 0x03B69C53};
+    uint32x3_t r2_mod_95_2_95_3 = {0x2631828, 0xD2697122, 0x03B69C53};
 
     printf("Perfoming Test 4 - 95 bit keys\n");
     printf("----------------------\n");
@@ -359,7 +359,7 @@ int main()
     // printf("Expected Cipher Text = 0x5E540B6F3B7B69CC81648395\n");
     
     t = clock();
-    uint32x3_t cipher_t_95_3 = encrypt(plain_t_95_3, E_95_3, N_95_3, 95, r2m_95_2_95_3);
+    uint32x3_t cipher_t_95_3 = encrypt(plain_t_95_3, E_95_3, N_95_3, 95, r2_mod_95_2_95_3);
     t = clock() - t;
     total += t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
@@ -368,7 +368,7 @@ int main()
 
     printf("Decrypting 95 bit...\n");
     t = clock();
-    uint32x3_t plain_t_res_95_3 = decrypt(cipher_t_95_3, D_95_3, N_95_3, 95, r2m_95_2_95_3);
+    uint32x3_t plain_t_res_95_3 = decrypt(cipher_t_95_3, D_95_3, N_95_3, 95, r2_mod_95_2_95_3);
     t = clock() - t;
     total += t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
@@ -382,7 +382,7 @@ int main()
     uint32x3_t N_96_2 = {0xa0d552ae, 0xfb090ec4, 0x601429b7};
     uint32x3_t E_96_2 = {0x00000000, 0x00000000, 0x00010001};
     uint32x3_t D_96_2 = {0x54a24d23,0x655514b5,0x00278929};
-    uint32x3_t r2m_96_2 = {0x599147d0, 0x0a1404f1 ,0xb605d62c};
+    uint32x3_t r2_mod_96_2 = {0x599147d0, 0x0a1404f1 ,0xb605d62c};
 
     printf("Perfoming Test 5 - 96 bit keys\n");
     printf("----------------------\n");
@@ -392,7 +392,7 @@ int main()
     print_uint32x3("D", D_96_2);
     printf("Encrypting 96 bit...\n");
     t = clock();
-    uint32x3_t cipher_t_96_2 = encrypt(plain_t_96_2, E_96_2, N_96_2, 96, r2m_96_2);
+    uint32x3_t cipher_t_96_2 = encrypt(plain_t_96_2, E_96_2, N_96_2, 96, r2_mod_96_2);
     t = clock() - t;
     total += t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
@@ -401,7 +401,7 @@ int main()
 
     printf("Decrypting 96 bit...\n");
     t = clock();
-    uint32x3_t plain_t_res_96_2 = decrypt(cipher_t_96_2, D_96_2, N_96_2, 96, r2m_96_2);
+    uint32x3_t plain_t_res_96_2 = decrypt(cipher_t_96_2, D_96_2, N_96_2, 96, r2_mod_96_2);
     t = clock() - t;
     total += t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds

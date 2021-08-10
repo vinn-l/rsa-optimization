@@ -71,9 +71,9 @@ int modular_exponentiation(int b, int e, int m)
 // Modular Exponentiation used with Montgomery Multiplication
 int modular_exponentiation_mont(int b, int e, int m, int numBits)
 {
-    int r2m = (1 << (2 * numBits)) % m;
-    int result = modular_multiplication(1, r2m, m);
-    int p = modular_multiplication(b, r2m, m);
+    int r2_mod = (1 << (2 * numBits)) % m;
+    int result = modular_multiplication(1, r2_mod, m);
+    int p = modular_multiplication(b, r2_mod, m);
 
     // if (1 & e) // if e is odd
     //     result = b;

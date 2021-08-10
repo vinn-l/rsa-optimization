@@ -10,6 +10,7 @@ ASMFLAGS =
 .PHONY: default all clean
 
 SRC_DIR := src
+ASM_DIR := asm
 
 default: $(TARGET)
 asm: $(TARGET_ASM)
@@ -19,56 +20,57 @@ montgomery_32bit: $(SRC_DIR)/montgomery_32bit.c
 	$(CC) $(CFLAGS) $< -o $@
 
 montgomery_32bit_asm: $(SRC_DIR)/montgomery_32bit.c
-	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
+	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S -o $(ASM_DIR)/$@.s
 
 montgomery_96bit: $(SRC_DIR)/montgomery_96bit.c
 	$(CC) $(CFLAGS) $< -o $@
 
 montgomery_96bit_asm: $(SRC_DIR)/montgomery_96bit.c
-	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
+	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S -o $(ASM_DIR)/$@.s
 
 montgomery_96bit_optimized_v1: $(SRC_DIR)/montgomery_96bit_optimized_v1.c
 	$(CC) $(CFLAGS) $< -o $@
 
 montgomery_96bit_optimized_v1_asm: $(SRC_DIR)/montgomery_96bit_optimized_v1.c
-	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
+	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S -o $(ASM_DIR)/$@.s
 
 montgomery_96bit_optimized_v2: $(SRC_DIR)/montgomery_96bit_optimized_v2.c
 	$(CC) $(CFLAGS) $< -o $@
 
 montgomery_96bit_optimized_v2_asm: $(SRC_DIR)/montgomery_96bit_optimized_v2.c
-	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
+	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S -o $(ASM_DIR)/$@.s
 
 montgomery_96bit_optimized_v3: $(SRC_DIR)/montgomery_96bit_optimized_v3.c
 	$(CC) $(CFLAGS) $< -o $@
 
 montgomery_96bit_optimized_v3_asm: $(SRC_DIR)/montgomery_96bit_optimized_v3.c
-	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
+	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S -o $(ASM_DIR)/$@.s
 
 montgomery_96bit_optimized_v4: $(SRC_DIR)/montgomery_96bit_optimized_v4.c
 	$(CC) $(CFLAGS) $< -o $@
 
 montgomery_96bit_optimized_v4_asm: $(SRC_DIR)/montgomery_96bit_optimized_v4.c
-	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
+	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S -o $(ASM_DIR)/$@.s
 
 mmm_95bit_before_loop_unroll_test: $(SRC_DIR)/mmm_95bit_before_loop_unroll_test.c
 	$(CC) $(CFLAGS) $< -o $@
 
 mmm_95bit_before_loop_unroll_test_asm: $(SRC_DIR)/mmm_95bit_before_loop_unroll_test.c
-	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
+	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S -o $(ASM_DIR)/$@.s
 
 mmm_95bit_after_loop_unroll_test: $(SRC_DIR)/mmm_95bit_after_loop_unroll_test.c
 	$(CC) $(CFLAGS) $< -o $@
 
 mmm_95bit_after_loop_unroll_test_asm: $(SRC_DIR)/mmm_95bit_after_loop_unroll_test.c
-	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S
+	$(CC) $(CFLAGS) $(ASMFLAGS) $< -S -o $(ASM_DIR)/$@.s
 
 montgomery_96bit_optimized_v2neon: $(SRC_DIR)/montgomery_96bit_optimized_v2neon.c
 	$(CC) $(CFLAGS) -mfpu=neon $< -o $@
 
 montgomery_96bit_optimized_v2neon_asm: $(SRC_DIR)/montgomery_96bit_optimized_v2neon.c
-	$(CC) $(CFLAGS) -mfpu=neon $(ASMFLAGS) $< -S
+	$(CC) $(CFLAGS) -mfpu=neon $(ASMFLAGS) $< -S -o $(ASM_DIR)/$@.s
 
 clean:
 	-rm -f *.o *.s
+	-rm -f $(ASM_DIR)/*
 	-rm -f $(TARGET)
