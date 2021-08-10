@@ -1,4 +1,4 @@
-# SENG440 Application-Specific Instruction-set Processor (ASIP) for MMM in RSA Cryptography
+# SENG440 - RSA Cryptography Optimization for Embedded Systems
 Processor model: ARMv7 Processor
 
 ### Build Instructions
