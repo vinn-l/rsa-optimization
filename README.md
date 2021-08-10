@@ -16,7 +16,7 @@ montgomery_96bit.c
 montgomery_96bit_optimized_v1.c
 - Performed Optimization to MMM
     - Storing only relevant 32-bit chunks of uint32x3_t
-    - Avoid loop counter i as argument in rshift_uint32x3
+    - Allowed change to rshift_uint32x3 from performing shifts of variable i ranging from 0-96, to only right shifts by 1 or 32.
 	
 montgomery_96bit_optimized_v2.c
 - Modified uint32x3_t to have 3 variables instead of an array of size 3
