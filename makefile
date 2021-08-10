@@ -4,7 +4,7 @@ TARGET_ASM = montgomery_96bit_asm montgomery_96bit_optimized_v1_asm montgomery_9
 LIBS = -lm
 CC = gcc
 # CFLAGS = -g -Wall -Wextra -Wfloat-equal -Wundef
-CFLAGS = -O -Wall -Wextra -Wfloat-equal -Wundef -Wno-missing-braces -Wno-maybe-uninitialized
+CFLAGS = -O1 -Wall -Wextra -Wfloat-equal -Wundef -Wno-missing-braces -Wno-maybe-uninitialized # Current setting is -O1
 # ASMFLAGS = -fverbose-asm
 ASMFLAGS = 
 .PHONY: default all clean

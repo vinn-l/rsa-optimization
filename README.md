@@ -15,20 +15,20 @@ montgomery_96bit.c
 	
 montgomery_96bit_optimized_v1.c
 - Performed Optimization to MMM
-    - Storing only relevant 32-bit chunks of uint32x3_t
-    - Allowed change to rshift_uint32x3 from performing shifts of variable i ranging from 0-96, to only right shifts by 1 or 32.
+    - Storing only relevant 32-bit chunks of uint96_t
+    - Allowed change to rshift_uint96 from performing shifts of variable i ranging from 0-96, to only right shifts by 1 or 32.
 	
 montgomery_96bit_optimized_v2.c
-- Modified uint32x3_t to have 3 variables instead of an array of size 3
-- Loop Unrolling to add_uint32x3
-- Loop Unrolling to sub_uint32x3
+- Modified uint96_t to have 3 variables instead of an array of size 3
+- Loop Unrolling to add_uint96
+- Loop Unrolling to sub_uint96
 
 montgomery_96bit_optimized_v2neon.c
-- Attempted to use neon operations for add_uint32x3, but the overhead of loading the 96 bits from arm to NEON and back is too costly and reduced overall performance
+- Attempted to use neon operations for add_uint96, but the overhead of loading the 96 bits from arm to NEON and back is too costly and reduced overall performance
 - **Neon is not pursued further**
 
 montgomery_96bit_optimized_v3.c
-- Rewrote rshift1_uint32x3 function from shifting by argument i to 2 function handling specifically shift by 1 and shift by 32
+- Rewrote rshift1_uint96 function from shifting by argument i to 2 function handling specifically shift by 1 and shift by 32
 
 montgomery_96bit_optimized_v4.c
 - Register keywords to aid the compiler

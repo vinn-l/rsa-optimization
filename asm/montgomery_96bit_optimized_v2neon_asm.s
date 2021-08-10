@@ -12,13 +12,13 @@
 	.file	"montgomery_96bit_optimized_v2neon.c"
 	.text
 	.align	2
-	.global	add_uint32x3
+	.global	add_uint96
 	.arch armv7-a
 	.syntax unified
 	.arm
 	.fpu neon
-	.type	add_uint32x3, %function
-add_uint32x3:
+	.type	add_uint96, %function
+add_uint96:
 	@ args = 12, pretend = 0, frame = 48
 	@ frame_needed = 0, uses_anonymous_args = 0
 	push	{r4, lr}
@@ -63,14 +63,14 @@ add_uint32x3:
 	cmp	r2, lr
 	addcc	r1, r1, #1
 	b	.L3
-	.size	add_uint32x3, .-add_uint32x3
+	.size	add_uint96, .-add_uint96
 	.align	2
-	.global	sub_uint32x3
+	.global	sub_uint96
 	.syntax unified
 	.arm
 	.fpu neon
-	.type	sub_uint32x3, %function
-sub_uint32x3:
+	.type	sub_uint96, %function
+sub_uint96:
 	@ args = 12, pretend = 0, frame = 16
 	@ frame_needed = 0, uses_anonymous_args = 0
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
@@ -123,14 +123,14 @@ sub_uint32x3:
 	add	sp, sp, #20
 	@ sp needed
 	pop	{r4, r5, r6, r7, r8, r9, r10, fp, pc}
-	.size	sub_uint32x3, .-sub_uint32x3
+	.size	sub_uint96, .-sub_uint96
 	.align	2
-	.global	cmp_uint32x3
+	.global	cmp_uint96
 	.syntax unified
 	.arm
 	.fpu neon
-	.type	cmp_uint32x3, %function
-cmp_uint32x3:
+	.type	cmp_uint96, %function
+cmp_uint96:
 	@ args = 16, pretend = 8, frame = 16
 	@ frame_needed = 0, uses_anonymous_args = 0
 	@ link register save eliminated.
@@ -164,14 +164,14 @@ cmp_uint32x3:
 	movcs	r0, #0
 	movcc	r0, #1
 	b	.L7
-	.size	cmp_uint32x3, .-cmp_uint32x3
+	.size	cmp_uint96, .-cmp_uint96
 	.align	2
-	.global	rshift_uint32x3
+	.global	rshift_uint96
 	.syntax unified
 	.arm
 	.fpu neon
-	.type	rshift_uint32x3, %function
-rshift_uint32x3:
+	.type	rshift_uint96, %function
+rshift_uint96:
 	@ args = 4, pretend = 0, frame = 16
 	@ frame_needed = 0, uses_anonymous_args = 0
 	push	{r4, lr}
@@ -218,14 +218,14 @@ rshift_uint32x3:
 	add	r3, r3, r2, lsl ip
 	str	r3, [r0, #8]
 	b	.L15
-	.size	rshift_uint32x3, .-rshift_uint32x3
+	.size	rshift_uint96, .-rshift_uint96
 	.align	2
-	.global	print_uint32x3
+	.global	print_uint96
 	.syntax unified
 	.arm
 	.fpu neon
-	.type	print_uint32x3, %function
-print_uint32x3:
+	.type	print_uint96, %function
+print_uint96:
 	@ args = 0, pretend = 0, frame = 16
 	@ frame_needed = 0, uses_anonymous_args = 0
 	str	lr, [sp, #-4]!
@@ -243,7 +243,7 @@ print_uint32x3:
 	add	sp, sp, #28
 	@ sp needed
 	ldr	pc, [sp], #4
-	.size	print_uint32x3, .-print_uint32x3
+	.size	print_uint96, .-print_uint96
 	.align	2
 	.global	modular_multiplication_32x3
 	.syntax unified
@@ -294,7 +294,7 @@ modular_multiplication_32x3:
 	stm	sp, {r0, r1, r2}
 	ldm	r8, {r1, r2, r3}
 	mov	r0, r8
-	bl	add_uint32x3
+	bl	add_uint96
 	ldr	r3, [sp, #68]
 	ldr	r2, [sp, #72]
 	ldr	ip, [sp, #76]
@@ -348,7 +348,7 @@ modular_multiplication_32x3:
 	stm	sp, {r0, r1, r2}
 	ldm	r8, {r1, r2, r3}
 	mov	r0, r4
-	bl	add_uint32x3
+	bl	add_uint96
 	ldm	r4, {r0, r1, r2}
 	stm	r8, {r0, r1, r2}
 	ldr	r3, [sp, #68]
