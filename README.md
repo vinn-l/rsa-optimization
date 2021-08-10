@@ -1,4 +1,6 @@
 # SENG440 - RSA Cryptography Optimization for Embedded Systems
+This code is part of a requirement for the SENG440 -Embedded Systems course offered in the University of Victoria in Summer 2021.
+
 Processor model: ARMv7 Processor
 
 ### Build Instructions
@@ -6,7 +8,7 @@ To build the executable, run **make**\
 To build .s assembly files, run **make asm**\
 To build all files (assembly and executable), run **make all**
 
-### .c files
+### .c src files
 montgomery_96bit.c
 - Original functional 96-bit RSA Encryption Decryption algorithm
 - Operator Strength Reduction performed to avoid 96bit multiplications in MMM
