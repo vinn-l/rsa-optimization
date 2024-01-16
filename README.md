@@ -1,5 +1,20 @@
 # SENG440 - RSA Cryptography Optimization for Embedded Systems
-This code is part of a requirement for the SENG440 -Embedded Systems course offered in the University of Victoria in Summer 2021.
+This project is part of a requirement for the SENG440 - Embedded Systems course offered in the University of Victoria in Summer 2021.
+
+This project involves implementing and further optimizing the RSA Encryption and Decryption algorithm for an embedded system with a goal for using RSA private and public keys of size 95-bits.
+
+A detailed report write-up can be found at **ProjectReport.pdf** in this repository.
+
+### Table showing the Cycle Count Averages for each optimization step performed
+| Version | Optimizations Performed                                      | Cycle Count Averages (O0) | Cycle Count Averages (O1) | Cycle Count Averages (O3) |
+|---------|--------------------------------------------------------------|--------------------------|--------------------------|--------------------------|
+| v0      | Initial Operator Strength Reduction on multiplication       | 43017.8                  | 27207.2                  | 6116.6                   |
+| v1      | + MMM Optimization                                          | 31139.2                  | 12256.2                  | 4931.2                   |
+| v2      | + Loop Unrolling for uint96_t add and sub operations<br> + Avoid internal array indexing in uint96_t       | 29255.0                  | 4022.2                   | 5023.0                   |
+| v2neon  | + Neon Addition (Not pursued / Removed for next version)    | 33277.4                  | 13961.6                  | 8141.6                   |
+| v3      | + Rewriting rshift_uint96 to two functions handling only right shifts by 1 or 32 | 27711.8          | 3925.6                   | 5251.8                   |
+| v4      | + Register Keyword                                          | 21813.4                  | 4254.2                   | 4830.0                   |
+
 
 The version/iteration that provides the best performance is **montgomery_96bit_optimized_v4.c**
 
