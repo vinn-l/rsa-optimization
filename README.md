@@ -1,4 +1,4 @@
-# SENG440 - RSA Cryptography Optimization for Embedded Systems
+# RSA Cryptography Optimization for Embedded Systems
 This project is part of a requirement for the SENG440 - Embedded Systems course offered in the University of Victoria in Summer 2021.
 
 This project involves implementing and further optimizing the RSA Encryption and Decryption algorithm for an embedded system with a goal for using RSA private and public keys of size 95-bits.
