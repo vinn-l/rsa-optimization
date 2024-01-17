@@ -6,7 +6,7 @@ This project involves implementing and further optimizing the RSA Encryption and
 A detailed report write-up can be found at **ProjectReport.pdf** in this repository.
 
 ### Table showing the Cycle Count Averages for each optimization step performed
-| Version | Optimizations Performed                                      | Cycle Count Averages (O0) | Cycle Count Averages (O1) | Cycle Count Averages (O3) |
+| Version | Optimizations Performed                                      | Cycle Count Averages (-O0) | Cycle Count Averages (-O1) | Cycle Count Averages (-O3) |
 |---------|--------------------------------------------------------------|--------------------------|--------------------------|--------------------------|
 | v0      | Initial Operator Strength Reduction on multiplication       | 43017.8                  | 27207.2                  | 6116.6                   |
 | v1      | + MMM Optimization                                          | 31139.2                  | 12256.2                  | 4931.2                   |
